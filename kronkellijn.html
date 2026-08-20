@@ -1,0 +1,5009 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronkellijn Tool — Carmi</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700;800&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #FBF3E7;
+    --ink: #3A2B22;
+    --line: #D8C6AE;
+    --accent: #bd949e;
+    --accent-soft: #f0dbe0;
+    --panel: #FFFDFA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    background: var(--paper);
+    color: var(--ink);
+    display:flex;
+    min-height:100vh;
+  }
+  #sidebar{
+    width: 300px;
+    flex-shrink:0;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 22px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    overflow-y:auto;
+    height:100vh;
+    position:sticky;
+    top:0;
+  }
+  h1{
+    font-size: 19px;
+    margin: 0 0 2px 0;
+    letter-spacing: 0.3px;
+  }
+  .sub{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: #8a7862;
+    margin-bottom: 6px;
+    line-height:1.5;
+  }
+  section{
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  section:first-of-type{border-top:none; padding-top:0;}
+  label{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8a7862;
+    display:block;
+    margin-bottom: 8px;
+  }
+  button{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 9px 14px;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button.secondary{
+    background: transparent;
+    color: var(--ink);
+  }
+  button.accent{
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  button:hover{ opacity:0.82; }
+  button:disabled{ opacity:0.35; cursor:default; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .line-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .line-item{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor:pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+  }
+  .line-item.active{ border-color: var(--accent); background: #FFF6EF; }
+  .swatch{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .line-item input[type=color]{
+    width:22px; height:22px; border:none; padding:0; background:none; cursor:pointer;
+  }
+  .line-item .del{
+    margin-left:auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    color: #b08a6f;
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding: 0 4px;
+  }
+  .line-item .eyedrop{
+    margin-left:auto;
+    font-size: 13px;
+    background:none;
+    border:1px solid var(--line);
+    border-radius: 4px;
+    padding: 3px 6px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .line-item .eyedrop.picking{
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  input[type=range]{ width:100%; }
+  input[type=color]{ width:36px; height:28px; border:1px solid var(--line); border-radius:4px; padding:0; cursor:pointer; background:none;}
+  .hint{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11.5px;
+    color: #a08d76;
+    line-height:1.5;
+    margin-top:6px;
+  }
+  #main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    padding: 30px;
+    gap: 16px;
+    overflow:auto;
+    min-width:0;
+  }
+  #canvasWrap{
+    position:relative;
+    box-shadow: 0 10px 40px rgba(58,43,34,0.18);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  canvas{ display:block; }
+  #overlay{
+    position:absolute;
+    top:0; left:0;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .mode-banner{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 16px;
+    border-radius: 20px;
+  }
+  .mode-banner b{ color: var(--accent-soft); }
+  #fileInput{ display:none; }
+
+  /* ---------- Mobile layout ---------- */
+  @media (max-width: 900px){
+    body{ flex-direction: column; }
+    #main{
+      order: -1;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--paper);
+      padding: 10px 10px 12px;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 6px 16px rgba(58,43,34,0.12);
+    }
+    #sidebar{
+      width: 100%;
+      height: auto;
+      position: static;
+      border-right: none;
+      border-top: 1px solid var(--line);
+      padding: 18px 16px 90px;
+    }
+    .mode-banner{ font-size: 12px; text-align:center; }
+    button{ padding: 11px 16px; font-size: 14px; }
+    .layer-item button, .icon-item .del{ padding: 8px 10px; }
+    input[type=range]{ height: 28px; }
+  }
+  .icon-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .icon-item{
+    display:flex; align-items:center; gap:8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12.5px;
+  }
+  .icon-item img{ width:26px; height:26px; object-fit:cover; border-radius:4px; border:1px solid var(--line); }
+  .icon-item .del{ margin-left:auto; background:none; border:none; color:#b08a6f; cursor:pointer; font-size:15px;}
+  .icon-item.is-anim{ background:#FFF6EF; border-radius:6px; padding:4px 6px; margin:-4px -6px; }
+  .icon-item .anim-tag{ font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); border:1px solid var(--accent-soft); border-radius:8px; padding:1px 6px; }
+  .field{ margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field-label-row{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .field-label-row label{ margin:0; }
+  .field-val{ font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:11.5px; color:#a08d76; }
+  textarea, select, input[type=text], input[type=number]{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    width:100%;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 7px 9px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  textarea{ resize:vertical; min-height:44px; font-size:14px; }
+  .inline-num{ width:70px !important; display:inline-block; }
+  .check-row{ display:flex; align-items:center; gap:7px; font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:12.5px; margin-bottom:8px; }
+  .check-row input{ margin:0; }
+  .preset-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .preset-btn{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .preset-btn:hover{ border-color: var(--accent); color: var(--accent); }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .play-row{ display:flex; align-items:center; gap:10px; }
+  #playBtn{ width:38px; height:38px; border-radius:50%; padding:0; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px;}
+  #scrub{ flex:1; }
+  #exportStatus{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: #8a7862;
+    min-height: 16px;
+    margin-top: 8px;
+  }
+  #previewOverlay{
+    position:fixed; inset:0; background:rgba(58,43,34,0.55);
+    display:none; align-items:center; justify-content:center;
+    z-index:1000;
+  }
+  #previewOverlay.open{ display:flex; }
+  #previewBox{
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 20px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  #previewHeaderRow{
+    display:flex; align-items:center; justify-content:space-between; width:100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #previewSlideLabel{ font-size:13px; color:#8a7862; font-weight:600; }
+  #previewCloseBtn{
+    background:none; border:none; font-size:18px; cursor:pointer; color: var(--ink);
+    line-height:1; padding:2px 6px;
+  }
+  #previewCanvas{
+    width: 320px; height: 400px;
+    border-radius: 6px;
+    box-shadow: 0 6px 24px rgba(58,43,34,0.25);
+    background:#fff;
+  }
+  #previewControls{ display:flex; align-items:center; gap:10px; }
+  #previewControls button{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+  }
+  #previewDots{ display:flex; gap:6px; }
+  .preview-dot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+  .preview-dot.active{ background: var(--accent); }
+  .layer-list{ display:flex; flex-direction:column; gap:4px; }
+  .layer-item{
+    display:flex; align-items:center; gap:6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12.5px;
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .layer-item:hover{ background: #FBF3EA; }
+  .layer-item.selected{ border-color: var(--accent); background: #FFF6EF; }
+  .layer-item .layer-label{ flex:1; }
+  .layer-item button{
+    background:none; border:none; cursor:pointer; padding:2px 4px; font-size:12px;
+    color: var(--ink); border-radius:4px; line-height:1;
+  }
+  .layer-item .layer-vis{ font-size:13px; }
+  .layer-item button:hover{ background: var(--accent-soft); }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div>
+    <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--line);padding:5px 10px;border-radius:20px;margin-bottom:10px;">← Carmi</a>
+    <h1>Kronkellijn Tool</h1>
+    <div class="sub">Zet tekst op een vloeiende golvende lijn over 4 Instagram-slides heen, en laat een icoontje die lijn volgen als animatie.</div>
+  </div>
+
+  <section>
+    <label>Project</label>
+    <div class="field">
+      <input type="text" id="projectNameInput" placeholder="Naam van dit project…" value="Mijn project">
+    </div>
+    <div class="row">
+      <button id="saveProjectBtn">Opslaan</button>
+      <button class="secondary" id="updateProjectBtn" style="display:none;">Bijwerken</button>
+    </div>
+    <div id="savedProjectsList" class="line-list" style="margin-top:8px;"></div>
+    <div id="projectStatus" class="hint"></div>
+    <div class="row" style="margin-top:6px;">
+      <button class="secondary" id="exportProjectFileBtn" style="font-size:11.5px; padding:6px 10px;">Downloaden als back-upbestand</button>
+      <button class="secondary" id="openProjectFileBtn" style="font-size:11.5px; padding:6px 10px;">Bestand openen…</button>
+    </div>
+    <input type="file" id="projectFileInput" accept=".json" style="display:none;">
+    <div class="hint">Projecten worden bewaard in deze browser op dit apparaat — geen bestand nodig. Open dezelfde webpagina later opnieuw om verder te werken. Heb je al een .json-bestand van eerder? Open het via "Bestand openen…".</div>
+  </section>
+
+  <section>
+    <label>Formaat</label>
+    <div class="preset-row">
+      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1350">Post (4:5)</button>
+      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1080">Vierkant (1:1)</button>
+      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1920">Story / Reel (9:16)</button>
+      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="608">Liggend (16:9)</button>
+    </div>
+    <div class="hint">Werkt ook op een al opgebouwd project — alles (tekst, golf, afbeeldingen) schaalt automatisch mee naar het nieuwe formaat, bijvoorbeeld van post naar story.</div>
+    <div class="field" style="margin-top:12px;">
+      <div class="field-label-row"><label>Aantal slides</label><span class="field-val" id="slideCountVal">4</span></div>
+      <input type="range" id="slideCount" min="1" max="10" step="1" value="4">
+    </div>
+    <div class="hint">Meer of minder Instagram-slides om de golf over te verdelen. Bestaande tekst/afbeeldingen blijven op hun plek staan; je krijgt gewoon meer of minder canvasbreedte.</div>
+  </section>
+
+  <section>
+    <label>Tekst op golvende lijn</label>
+    <div class="field">
+      <textarea id="waveText" placeholder="Typ hier je tekst…"></textarea>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="waveRepeat" checked>
+      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveRepeat">Herhaal tekst om de hele breedte te vullen</label>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <div class="field-label-row"><label>Lettertype</label></div>
+        <select id="waveFontFamily">
+          <option value="Georgia, 'Iowan Old Style', serif" selected>Georgia (serif)</option>
+          <option value="'Times New Roman', serif">Times</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="'Helvetica Neue', sans-serif">Helvetica</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="'Courier New', monospace">Courier</option>
+          <option value="'Montserrat', sans-serif">Montserrat</option>
+          <option value="'League Spartan', sans-serif">League Spartan</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Kleur</label></div>
+        <input type="color" id="waveTextColor" value="#ffffff">
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Tekstgrootte</label><span class="field-val" id="waveFontSizeVal">64px</span></div>
+      <input type="range" id="waveFontSize" min="20" max="160" value="64">
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="waveBold" checked>
+      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveBold">Vet</label>
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Letterspatiëring</label><span class="field-val" id="waveLetterSpacingVal">2px</span></div>
+      <input type="range" id="waveLetterSpacing" min="-4" max="30" value="2">
+    </div>
+  </section>
+
+  <section>
+    <label>Vorm tussen herhalingen</label>
+    <div class="field">
+      <div class="field-label-row"><label>Vorm</label></div>
+      <select id="shapeType">
+        <option value="none" selected>Geen</option>
+        <option value="heart">Hartje</option>
+        <option value="circle">Cirkel</option>
+        <option value="star">Ster</option>
+        <option value="cloud">Wolkje</option>
+      </select>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <div class="field-label-row"><label>Grootte</label><span class="field-val" id="shapeSizeVal">48px</span></div>
+        <input type="range" id="shapeSize" min="10" max="200" value="48">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Kleur</label></div>
+        <input type="color" id="shapeColor" value="#ffffff">
+      </div>
+    </div>
+    <div class="hint">Verschijnt tussen elke herhaling van de tekst langs de lijn (zoals het wolkje-icoontje in het Les Deux-voorbeeld). Alleen zichtbaar als "Herhaal tekst" hierboven aan staat.</div>
+  </section>
+
+  <section>
+    <label>Vormen in de lijn</label>
+    <div class="row">
+      <select id="newPathShapeType" style="flex:1;">
+        <option value="heart">Hartje</option>
+        <option value="circle">Cirkel</option>
+        <option value="loop">Lus</option>
+        <option value="star">Ster</option>
+      </select>
+      <button class="secondary" id="addPathShapeBtn">+ Toevoegen</button>
+    </div>
+    <div class="line-list" id="pathShapeList" style="margin-top:8px;"></div>
+    <div id="selectedPathShapePanel" style="display:none; margin-top:10px;">
+      <div class="field">
+        <div class="field-label-row"><label>Positie op de lijn</label><span class="field-val" id="pathShapePosVal">50%</span></div>
+        <input type="range" id="pathShapePos" min="0" max="100" value="50">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Grootte</label><span class="field-val" id="pathShapeSizeVal">180px</span></div>
+        <input type="range" id="pathShapeSize" min="40" max="500" value="180">
+      </div>
+    </div>
+    <div class="hint">De lijn zelf maakt hier een uitstapje in de gekozen vorm — alles wat al langs de lijn loopt (tekst, de lijnstreek, het animerende icoontje) volgt automatisch mee, zoals in het voorbeeld waar je met je vinger een hartje tekende.</div>
+  </section>
+
+  <section>
+    <label>Golfpatroon</label>
+    <div class="preset-row">
+      <button type="button" class="preset-btn" data-amp="30" data-wl="1400">Subtiel</button>
+      <button type="button" class="preset-btn" data-amp="90" data-wl="850">Golvend</button>
+      <button type="button" class="preset-btn" data-amp="150" data-wl="520">Speels</button>
+      <button type="button" class="preset-btn" data-amp="0" data-wl="1000">Recht</button>
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Amplitude (hoogte golf)</label><span class="field-val" id="waveAmplitudeVal">90px</span></div>
+      <input type="range" id="waveAmplitude" min="0" max="260" value="90">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Golflengte</label><span class="field-val" id="waveWavelengthVal">850px</span></div>
+      <input type="range" id="waveWavelength" min="200" max="2400" value="850">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Fase (verschuiven)</label><span class="field-val" id="wavePhaseVal">0°</span></div>
+      <input type="range" id="wavePhase" min="0" max="360" value="0">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Verticale positie</label><span class="field-val" id="waveBaselineVal">50%</span></div>
+      <input type="range" id="waveBaseline" min="0" max="100" value="45">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Horizontale positie</label><span class="field-val" id="waveOffsetXVal">0px</span></div>
+      <input type="range" id="waveOffsetX" min="-4300" max="4300" value="0">
+    </div>
+    <div class="row">
+      <button type="button" class="secondary" id="resetWavePosBtn" style="font-size:12px; padding:6px 10px;">Positie herstellen</button>
+    </div>
+    <div class="hint">Sleep de tekst ook rechtstreeks op het canvas naar de gewenste plek (klik op een leeg deel en sleep).</div>
+    <div class="check-row">
+      <input type="checkbox" id="waveVisible">
+      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveVisible">Toon de lijn zelf (niet alleen de tekst)</label>
+    </div>
+    <div class="field" id="waveStrokeFields" style="display:none;">
+      <div class="grid2">
+        <input type="color" id="waveColor" value="#ffffff">
+        <input type="range" id="waveThickness" min="2" max="20" value="6">
+      </div>
+    </div>
+    <div class="hint">De golf is wiskundig (sinus-gebaseerd) dus altijd perfect vloeiend — geen handmatig geklik meer nodig.</div>
+  </section>
+
+  <section>
+    <label>Lijnen (los, decoratief)</label>
+    <div class="row">
+      <button id="addLine">+ Nieuwe lijn</button>
+    </div>
+    <div class="line-list" id="lineList"></div>
+    <div class="hint">Optioneel: los van de golftekst hierboven kan je hier nog handmatige lijntjes toevoegen. Selecteer een lijn, klik op het canvas om punten toe te voegen. Druk <b>Enter</b> om af te ronden, <b>Ctrl+Z</b> voor ongedaan maken.</div>
+  </section>
+
+  <section>
+    <label>Ingrediënt-afbeeldingen</label>
+    <div class="row">
+      <button class="secondary" id="addIcon">+ Afbeelding toevoegen</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="icon-list" id="iconList"></div>
+    <div id="selectedIconSizePanel" class="field" style="display:none; margin-top:10px;">
+      <div class="field-label-row"><label>Grootte geselecteerde afbeelding</label><span class="field-val" id="selectedIconSizeVal">160px</span></div>
+      <input type="range" id="selectedIconSize" min="20" max="600" value="160">
+    </div>
+    <div class="hint">Klik een afbeelding aan om ze te selecteren — sleep haar rond (met magnetische hulplijnen op middens/randen), sleep de <b>bolletje-handle</b> rechtsonder om te schalen, of gebruik de schuif hierboven.</div>
+  </section>
+
+  <section>
+    <label>Lagen</label>
+    <div class="layer-list" id="layerList"></div>
+    <div class="hint">▲▼ wijzigen alleen de <b>volgorde</b> (wat voor/achter ligt) — niet de positie. Klik een naam om die laag te selecteren; op het canvas verschijnt dan een oranje <b>verplaats-handvat</b> in het midden waarmee je 'm kan slepen, ook als een andere afbeelding erover ligt. Met de pijltjestoetsen verschuif je de selectie nauwkeurig (Shift = grotere stap).</div>
+  </section>
+
+  <section>
+    <label>Animatie</label>
+    <div class="field">
+      <div class="field-label-row"><label>Animerend icoon</label></div>
+      <select id="animIconSelect"><option value="">— geen —</option></select>
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Grootte icoon</label><span class="field-val" id="animIconSizeVal">160px</span></div>
+      <input type="range" id="animIconSize" min="30" max="500" value="160">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <div class="field-label-row"><label>Duur</label><span class="field-val" id="animDurationVal">5.0s</span></div>
+        <input type="range" id="animDuration" min="1" max="15" step="0.1" value="5">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Vasthouden op eind</label><span class="field-val" id="animHoldVal">1.0s</span></div>
+        <input type="range" id="animHold" min="0" max="5" step="0.1" value="1">
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Vertraging bij start</label><span class="field-val" id="animDelayVal">0.0s</span></div>
+      <input type="range" id="animDelay" min="0" max="3" step="0.1" value="0">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label>Beweging</label></div>
+      <select id="animEasing">
+        <option value="linear" selected>Lineair (gelijkmatig — beste voor naadloze slides)</option>
+        <option value="easeInOut">Ease in/out (rustig starten en stoppen)</option>
+      </select>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="animRotate">
+      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="animRotate">Icoon meeroteren met de lijn</label>
+    </div>
+    <div class="play-row">
+      <button class="secondary" id="playBtn">▶</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0">
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="accent" id="previewCarouselBtn">Voorbeeld per slide ▸</button>
+    </div>
+    <div class="hint">Speelt elke slide af zoals hij er in de Instagram-carrousel uit zou zien, inclusief het naadloze vertrekpunt van de animatie.</div>
+    <div class="hint">Kies hierboven welke afbeelding meebeweegt over de golvende lijn. Speel af om de beweging te bekijken voor je exporteert.</div>
+  </section>
+
+  <section>
+    <label>Achtergrond</label>
+    <div class="row" style="align-items:center;">
+      <input type="color" id="bgColor" value="#F5D5DE">
+      <span class="sub" style="margin:0;">Slide-achtergrondkleur</span>
+    </div>
+  </section>
+
+  <section>
+    <label>Lijndikte (losse lijnen)</label>
+    <input type="range" id="strokeWidth" min="3" max="18" value="7">
+  </section>
+
+  <section>
+    <label>Zoom</label>
+    <div class="row" style="align-items:center;">
+      <button class="secondary" id="zoomOut">−</button>
+      <span class="sub" id="zoomLabel" style="margin:0; min-width:44px; text-align:center;">100%</span>
+      <button class="secondary" id="zoomIn">+</button>
+      <button class="secondary" id="zoomReset">Passend</button>
+    </div>
+    <div class="hint">Of scroll met Ctrl (Cmd op Mac) ingedrukt over het canvas.</div>
+  </section>
+
+  <section>
+    <label>Exporteren</label>
+    <div class="row">
+      <button class="accent" id="exportBtn">Exporteer 4 slides (PNG)</button>
+    </div>
+    <div class="hint">Downloadt 4 losse PNG's (1080×1350), precies zoals nu op het canvas te zien is.</div>
+    <div class="row" style="margin-top:10px;">
+      <button class="accent" id="exportVideoBtn">Exporteer 4 slides (video)</button>
+    </div>
+    <div class="hint">Elke slide-video start precies op het moment dat het icoon links in beeld komt — bij het doorswipen op Instagram lijkt de animatie zo naadloos door te lopen. Exporteert rechtstreeks als MP4 (H.264), zonder haperingen: elke frame krijgt een vaste, berekende plek in de tijd in plaats van live te worden opgenomen.</div>
+    <div id="exportStatus"></div>
+    <div id="exportResults" class="line-list" style="margin-top:8px;"></div>
+    <div class="row" style="margin-top:10px;">
+      <button class="secondary" id="clearBtn">Alles wissen</button>
+    </div>
+  </section>
+</div>
+
+<div id="main">
+  <div class="mode-banner" id="modeBanner">Selecteer of maak een lijn, klik dan op het canvas om punten te plaatsen.</div>
+  <div id="canvasWrap">
+    <canvas id="baseCanvas"></canvas>
+    <canvas id="overlay"></canvas>
+  </div>
+</div>
+
+<div id="previewOverlay">
+  <div id="previewBox">
+    <div id="previewHeaderRow">
+      <span id="previewSlideLabel">Slide 1 / 4</span>
+      <button id="previewCloseBtn" title="Sluiten">✕</button>
+    </div>
+    <canvas id="previewCanvas"></canvas>
+    <div id="previewDots"></div>
+    <div id="previewControls">
+      <button class="secondary" id="previewPrevBtn">‹ Vorige</button>
+      <button id="previewPlayPauseBtn">❚❚ Pauze</button>
+      <button class="secondary" id="previewNextBtn">Volgende ›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- mp4-muxer (bundled inline, MIT license, https://github.com/Vanilagy/mp4-muxer) ----------
+"use strict";
+var Mp4Muxer = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+  var __accessCheck = (obj, member, msg) => {
+    if (!member.has(obj))
+      throw TypeError("Cannot " + msg);
+  };
+  var __privateGet = (obj, member, getter) => {
+    __accessCheck(obj, member, "read from private field");
+    return getter ? getter.call(obj) : member.get(obj);
+  };
+  var __privateAdd = (obj, member, value) => {
+    if (member.has(obj))
+      throw TypeError("Cannot add the same private member more than once");
+    member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
+  };
+  var __privateSet = (obj, member, value, setter) => {
+    __accessCheck(obj, member, "write to private field");
+    setter ? setter.call(obj, value) : member.set(obj, value);
+    return value;
+  };
+  var __privateWrapper = (obj, member, setter, getter) => ({
+    set _(value) {
+      __privateSet(obj, member, value, setter);
+    },
+    get _() {
+      return __privateGet(obj, member, getter);
+    }
+  });
+  var __privateMethod = (obj, member, method) => {
+    __accessCheck(obj, member, "access private method");
+    return method;
+  };
+
+  // src/index.ts
+  var src_exports = {};
+  __export(src_exports, {
+    ArrayBufferTarget: () => ArrayBufferTarget,
+    FileSystemWritableFileStreamTarget: () => FileSystemWritableFileStreamTarget,
+    Muxer: () => Muxer,
+    StreamTarget: () => StreamTarget
+  });
+
+  // src/misc.ts
+  var bytes = new Uint8Array(8);
+  var view = new DataView(bytes.buffer);
+  var u8 = (value) => {
+    return [(value % 256 + 256) % 256];
+  };
+  var u16 = (value) => {
+    view.setUint16(0, value, false);
+    return [bytes[0], bytes[1]];
+  };
+  var i16 = (value) => {
+    view.setInt16(0, value, false);
+    return [bytes[0], bytes[1]];
+  };
+  var u24 = (value) => {
+    view.setUint32(0, value, false);
+    return [bytes[1], bytes[2], bytes[3]];
+  };
+  var u32 = (value) => {
+    view.setUint32(0, value, false);
+    return [bytes[0], bytes[1], bytes[2], bytes[3]];
+  };
+  var i32 = (value) => {
+    view.setInt32(0, value, false);
+    return [bytes[0], bytes[1], bytes[2], bytes[3]];
+  };
+  var u64 = (value) => {
+    view.setUint32(0, Math.floor(value / 2 ** 32), false);
+    view.setUint32(4, value, false);
+    return [bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]];
+  };
+  var fixed_8_8 = (value) => {
+    view.setInt16(0, 2 ** 8 * value, false);
+    return [bytes[0], bytes[1]];
+  };
+  var fixed_16_16 = (value) => {
+    view.setInt32(0, 2 ** 16 * value, false);
+    return [bytes[0], bytes[1], bytes[2], bytes[3]];
+  };
+  var fixed_2_30 = (value) => {
+    view.setInt32(0, 2 ** 30 * value, false);
+    return [bytes[0], bytes[1], bytes[2], bytes[3]];
+  };
+  var ascii = (text, nullTerminated = false) => {
+    let bytes2 = Array(text.length).fill(null).map((_, i) => text.charCodeAt(i));
+    if (nullTerminated)
+      bytes2.push(0);
+    return bytes2;
+  };
+  var last = (arr) => {
+    return arr && arr[arr.length - 1];
+  };
+  var lastPresentedSample = (samples) => {
+    let result = void 0;
+    for (let sample of samples) {
+      if (!result || sample.presentationTimestamp > result.presentationTimestamp) {
+        result = sample;
+      }
+    }
+    return result;
+  };
+  var intoTimescale = (timeInSeconds, timescale, round = true) => {
+    let value = timeInSeconds * timescale;
+    return round ? Math.round(value) : value;
+  };
+  var rotationMatrix = (rotationInDegrees) => {
+    let theta = rotationInDegrees * (Math.PI / 180);
+    let cosTheta = Math.cos(theta);
+    let sinTheta = Math.sin(theta);
+    return [
+      cosTheta,
+      sinTheta,
+      0,
+      -sinTheta,
+      cosTheta,
+      0,
+      0,
+      0,
+      1
+    ];
+  };
+  var IDENTITY_MATRIX = rotationMatrix(0);
+  var matrixToBytes = (matrix) => {
+    return [
+      fixed_16_16(matrix[0]),
+      fixed_16_16(matrix[1]),
+      fixed_2_30(matrix[2]),
+      fixed_16_16(matrix[3]),
+      fixed_16_16(matrix[4]),
+      fixed_2_30(matrix[5]),
+      fixed_16_16(matrix[6]),
+      fixed_16_16(matrix[7]),
+      fixed_2_30(matrix[8])
+    ];
+  };
+  var deepClone = (x) => {
+    if (!x)
+      return x;
+    if (typeof x !== "object")
+      return x;
+    if (Array.isArray(x))
+      return x.map(deepClone);
+    return Object.fromEntries(Object.entries(x).map(([key, value]) => [key, deepClone(value)]));
+  };
+  var isU32 = (value) => {
+    return value >= 0 && value < 2 ** 32;
+  };
+
+  // src/box.ts
+  var box = (type, contents, children) => ({
+    type,
+    contents: contents && new Uint8Array(contents.flat(10)),
+    children
+  });
+  var fullBox = (type, version, flags, contents, children) => box(
+    type,
+    [u8(version), u24(flags), contents ?? []],
+    children
+  );
+  var ftyp = (details) => {
+    let minorVersion = 512;
+    if (details.fragmented)
+      return box("ftyp", [
+        ascii("iso5"),
+        // Major brand
+        u32(minorVersion),
+        // Minor version
+        // Compatible brands
+        ascii("iso5"),
+        ascii("iso6"),
+        ascii("mp41")
+      ]);
+    return box("ftyp", [
+      ascii("isom"),
+      // Major brand
+      u32(minorVersion),
+      // Minor version
+      // Compatible brands
+      ascii("isom"),
+      details.holdsAvc ? ascii("avc1") : [],
+      ascii("mp41")
+    ]);
+  };
+  var mdat = (reserveLargeSize) => ({ type: "mdat", largeSize: reserveLargeSize });
+  var free = (size) => ({ type: "free", size });
+  var moov = (tracks, creationTime, fragmented = false) => box("moov", null, [
+    mvhd(creationTime, tracks),
+    ...tracks.map((x) => trak(x, creationTime)),
+    fragmented ? mvex(tracks) : null
+  ]);
+  var mvhd = (creationTime, tracks) => {
+    let duration = intoTimescale(Math.max(
+      0,
+      ...tracks.filter((x) => x.samples.length > 0).map((x) => {
+        const lastSample = lastPresentedSample(x.samples);
+        return lastSample.presentationTimestamp + lastSample.duration;
+      })
+    ), GLOBAL_TIMESCALE);
+    let nextTrackId = Math.max(...tracks.map((x) => x.id)) + 1;
+    let needsU64 = !isU32(creationTime) || !isU32(duration);
+    let u32OrU64 = needsU64 ? u64 : u32;
+    return fullBox("mvhd", +needsU64, 0, [
+      u32OrU64(creationTime),
+      // Creation time
+      u32OrU64(creationTime),
+      // Modification time
+      u32(GLOBAL_TIMESCALE),
+      // Timescale
+      u32OrU64(duration),
+      // Duration
+      fixed_16_16(1),
+      // Preferred rate
+      fixed_8_8(1),
+      // Preferred volume
+      Array(10).fill(0),
+      // Reserved
+      matrixToBytes(IDENTITY_MATRIX),
+      // Matrix
+      Array(24).fill(0),
+      // Pre-defined
+      u32(nextTrackId)
+      // Next track ID
+    ]);
+  };
+  var trak = (track, creationTime) => box("trak", null, [
+    tkhd(track, creationTime),
+    mdia(track, creationTime)
+  ]);
+  var tkhd = (track, creationTime) => {
+    let lastSample = lastPresentedSample(track.samples);
+    let durationInGlobalTimescale = intoTimescale(
+      lastSample ? lastSample.presentationTimestamp + lastSample.duration : 0,
+      GLOBAL_TIMESCALE
+    );
+    let needsU64 = !isU32(creationTime) || !isU32(durationInGlobalTimescale);
+    let u32OrU64 = needsU64 ? u64 : u32;
+    let matrix;
+    if (track.info.type === "video") {
+      matrix = typeof track.info.rotation === "number" ? rotationMatrix(track.info.rotation) : track.info.rotation;
+    } else {
+      matrix = IDENTITY_MATRIX;
+    }
+    return fullBox("tkhd", +needsU64, 3, [
+      u32OrU64(creationTime),
+      // Creation time
+      u32OrU64(creationTime),
+      // Modification time
+      u32(track.id),
+      // Track ID
+      u32(0),
+      // Reserved
+      u32OrU64(durationInGlobalTimescale),
+      // Duration
+      Array(8).fill(0),
+      // Reserved
+      u16(0),
+      // Layer
+      u16(0),
+      // Alternate group
+      fixed_8_8(track.info.type === "audio" ? 1 : 0),
+      // Volume
+      u16(0),
+      // Reserved
+      matrixToBytes(matrix),
+      // Matrix
+      fixed_16_16(track.info.type === "video" ? track.info.width : 0),
+      // Track width
+      fixed_16_16(track.info.type === "video" ? track.info.height : 0)
+      // Track height
+    ]);
+  };
+  var mdia = (track, creationTime) => box("mdia", null, [
+    mdhd(track, creationTime),
+    hdlr(track.info.type === "video" ? "vide" : "soun"),
+    minf(track)
+  ]);
+  var mdhd = (track, creationTime) => {
+    let lastSample = lastPresentedSample(track.samples);
+    let localDuration = intoTimescale(
+      lastSample ? lastSample.presentationTimestamp + lastSample.duration : 0,
+      track.timescale
+    );
+    let needsU64 = !isU32(creationTime) || !isU32(localDuration);
+    let u32OrU64 = needsU64 ? u64 : u32;
+    return fullBox("mdhd", +needsU64, 0, [
+      u32OrU64(creationTime),
+      // Creation time
+      u32OrU64(creationTime),
+      // Modification time
+      u32(track.timescale),
+      // Timescale
+      u32OrU64(localDuration),
+      // Duration
+      u16(21956),
+      // Language ("und", undetermined)
+      u16(0)
+      // Quality
+    ]);
+  };
+  var hdlr = (componentSubtype) => fullBox("hdlr", 0, 0, [
+    ascii("mhlr"),
+    // Component type
+    ascii(componentSubtype),
+    // Component subtype
+    u32(0),
+    // Component manufacturer
+    u32(0),
+    // Component flags
+    u32(0),
+    // Component flags mask
+    ascii("mp4-muxer-hdlr", true)
+    // Component name
+  ]);
+  var minf = (track) => box("minf", null, [
+    track.info.type === "video" ? vmhd() : smhd(),
+    dinf(),
+    stbl(track)
+  ]);
+  var vmhd = () => fullBox("vmhd", 0, 1, [
+    u16(0),
+    // Graphics mode
+    u16(0),
+    // Opcolor R
+    u16(0),
+    // Opcolor G
+    u16(0)
+    // Opcolor B
+  ]);
+  var smhd = () => fullBox("smhd", 0, 0, [
+    u16(0),
+    // Balance
+    u16(0)
+    // Reserved
+  ]);
+  var dinf = () => box("dinf", null, [
+    dref()
+  ]);
+  var dref = () => fullBox("dref", 0, 0, [
+    u32(1)
+    // Entry count
+  ], [
+    url()
+  ]);
+  var url = () => fullBox("url ", 0, 1);
+  var stbl = (track) => {
+    const needsCtts = track.compositionTimeOffsetTable.length > 1 || track.compositionTimeOffsetTable.some((x) => x.sampleCompositionTimeOffset !== 0);
+    return box("stbl", null, [
+      stsd(track),
+      stts(track),
+      stss(track),
+      stsc(track),
+      stsz(track),
+      stco(track),
+      needsCtts ? ctts(track) : null
+    ]);
+  };
+  var stsd = (track) => fullBox("stsd", 0, 0, [
+    u32(1)
+    // Entry count
+  ], [
+    track.info.type === "video" ? videoSampleDescription(
+      VIDEO_CODEC_TO_BOX_NAME[track.info.codec],
+      track
+    ) : soundSampleDescription(
+      AUDIO_CODEC_TO_BOX_NAME[track.info.codec],
+      track
+    )
+  ]);
+  var videoSampleDescription = (compressionType, track) => box(compressionType, [
+    Array(6).fill(0),
+    // Reserved
+    u16(1),
+    // Data reference index
+    u16(0),
+    // Pre-defined
+    u16(0),
+    // Reserved
+    Array(12).fill(0),
+    // Pre-defined
+    u16(track.info.width),
+    // Width
+    u16(track.info.height),
+    // Height
+    u32(4718592),
+    // Horizontal resolution
+    u32(4718592),
+    // Vertical resolution
+    u32(0),
+    // Reserved
+    u16(1),
+    // Frame count
+    Array(32).fill(0),
+    // Compressor name
+    u16(24),
+    // Depth
+    i16(65535)
+    // Pre-defined
+  ], [
+    VIDEO_CODEC_TO_CONFIGURATION_BOX[track.info.codec](track),
+    track.info.decoderConfig.colorSpace ? colr(track) : null
+  ]);
+  var COLOR_PRIMARIES_MAP = {
+    "bt709": 1,
+    // ITU-R BT.709
+    "bt470bg": 5,
+    // ITU-R BT.470BG
+    "smpte170m": 6
+    // ITU-R BT.601 525 - SMPTE 170M
+  };
+  var TRANSFER_CHARACTERISTICS_MAP = {
+    "bt709": 1,
+    // ITU-R BT.709
+    "smpte170m": 6,
+    // SMPTE 170M
+    "iec61966-2-1": 13
+    // IEC 61966-2-1
+  };
+  var MATRIX_COEFFICIENTS_MAP = {
+    "rgb": 0,
+    // Identity
+    "bt709": 1,
+    // ITU-R BT.709
+    "bt470bg": 5,
+    // ITU-R BT.470BG
+    "smpte170m": 6
+    // SMPTE 170M
+  };
+  var colr = (track) => box("colr", [
+    ascii("nclx"),
+    // Colour type
+    u16(COLOR_PRIMARIES_MAP[track.info.decoderConfig.colorSpace.primaries]),
+    // Colour primaries
+    u16(TRANSFER_CHARACTERISTICS_MAP[track.info.decoderConfig.colorSpace.transfer]),
+    // Transfer characteristics
+    u16(MATRIX_COEFFICIENTS_MAP[track.info.decoderConfig.colorSpace.matrix]),
+    // Matrix coefficients
+    u8((track.info.decoderConfig.colorSpace.fullRange ? 1 : 0) << 7)
+    // Full range flag
+  ]);
+  var avcC = (track) => track.info.decoderConfig && box("avcC", [
+    // For AVC, description is an AVCDecoderConfigurationRecord, so nothing else to do here
+    ...new Uint8Array(track.info.decoderConfig.description)
+  ]);
+  var hvcC = (track) => track.info.decoderConfig && box("hvcC", [
+    // For HEVC, description is a HEVCDecoderConfigurationRecord, so nothing else to do here
+    ...new Uint8Array(track.info.decoderConfig.description)
+  ]);
+  var vpcC = (track) => {
+    if (!track.info.decoderConfig) {
+      return null;
+    }
+    let decoderConfig = track.info.decoderConfig;
+    if (!decoderConfig.colorSpace) {
+      throw new Error(`'colorSpace' is required in the decoder config for VP9.`);
+    }
+    let parts = decoderConfig.codec.split(".");
+    let profile = Number(parts[1]);
+    let level = Number(parts[2]);
+    let bitDepth = Number(parts[3]);
+    let chromaSubsampling = 0;
+    let thirdByte = (bitDepth << 4) + (chromaSubsampling << 1) + Number(decoderConfig.colorSpace.fullRange);
+    let colourPrimaries = 2;
+    let transferCharacteristics = 2;
+    let matrixCoefficients = 2;
+    return fullBox("vpcC", 1, 0, [
+      u8(profile),
+      // Profile
+      u8(level),
+      // Level
+      u8(thirdByte),
+      // Bit depth, chroma subsampling, full range
+      u8(colourPrimaries),
+      // Colour primaries
+      u8(transferCharacteristics),
+      // Transfer characteristics
+      u8(matrixCoefficients),
+      // Matrix coefficients
+      u16(0)
+      // Codec initialization data size
+    ]);
+  };
+  var av1C = () => {
+    let marker = 1;
+    let version = 1;
+    let firstByte = (marker << 7) + version;
+    return box("av1C", [
+      firstByte,
+      0,
+      0,
+      0
+    ]);
+  };
+  var soundSampleDescription = (compressionType, track) => box(compressionType, [
+    Array(6).fill(0),
+    // Reserved
+    u16(1),
+    // Data reference index
+    u16(0),
+    // Version
+    u16(0),
+    // Revision level
+    u32(0),
+    // Vendor
+    u16(track.info.numberOfChannels),
+    // Number of channels
+    u16(16),
+    // Sample size (bits)
+    u16(0),
+    // Compression ID
+    u16(0),
+    // Packet size
+    fixed_16_16(track.info.sampleRate)
+    // Sample rate
+  ], [
+    AUDIO_CODEC_TO_CONFIGURATION_BOX[track.info.codec](track)
+  ]);
+  var esds = (track) => {
+    let description = new Uint8Array(track.info.decoderConfig.description);
+    return fullBox("esds", 0, 0, [
+      // https://stackoverflow.com/a/54803118
+      u32(58753152),
+      // TAG(3) = Object Descriptor ([2])
+      u8(32 + description.byteLength),
+      // length of this OD (which includes the next 2 tags)
+      u16(1),
+      // ES_ID = 1
+      u8(0),
+      // flags etc = 0
+      u32(75530368),
+      // TAG(4) = ES Descriptor ([2]) embedded in above OD
+      u8(18 + description.byteLength),
+      // length of this ESD
+      u8(64),
+      // MPEG-4 Audio
+      u8(21),
+      // stream type(6bits)=5 audio, flags(2bits)=1
+      u24(0),
+      // 24bit buffer size
+      u32(130071),
+      // max bitrate
+      u32(130071),
+      // avg bitrate
+      u32(92307584),
+      // TAG(5) = ASC ([2],[3]) embedded in above OD
+      u8(description.byteLength),
+      // length
+      ...description,
+      u32(109084800),
+      // TAG(6)
+      u8(1),
+      // length
+      u8(2)
+      // data
+    ]);
+  };
+  var dOps = (track) => {
+    let preskip = 3840;
+    let gain = 0;
+    const description = track.info.decoderConfig?.description;
+    if (description) {
+      if (description.byteLength < 18) {
+        throw new TypeError("Invalid decoder description provided for Opus; must be at least 18 bytes long.");
+      }
+      const view2 = ArrayBuffer.isView(description) ? new DataView(description.buffer, description.byteOffset, description.byteLength) : new DataView(description);
+      preskip = view2.getUint16(10, true);
+      gain = view2.getInt16(14, true);
+    }
+    return box("dOps", [
+      u8(0),
+      // Version
+      u8(track.info.numberOfChannels),
+      // OutputChannelCount
+      u16(preskip),
+      u32(track.info.sampleRate),
+      // InputSampleRate
+      fixed_8_8(gain),
+      // OutputGain
+      u8(0)
+      // ChannelMappingFamily
+    ]);
+  };
+  var stts = (track) => {
+    return fullBox("stts", 0, 0, [
+      u32(track.timeToSampleTable.length),
+      // Number of entries
+      track.timeToSampleTable.map((x) => [
+        // Time-to-sample table
+        u32(x.sampleCount),
+        // Sample count
+        u32(x.sampleDelta)
+        // Sample duration
+      ])
+    ]);
+  };
+  var stss = (track) => {
+    if (track.samples.every((x) => x.type === "key"))
+      return null;
+    let keySamples = [...track.samples.entries()].filter(([, sample]) => sample.type === "key");
+    return fullBox("stss", 0, 0, [
+      u32(keySamples.length),
+      // Number of entries
+      keySamples.map(([index]) => u32(index + 1))
+      // Sync sample table
+    ]);
+  };
+  var stsc = (track) => {
+    return fullBox("stsc", 0, 0, [
+      u32(track.compactlyCodedChunkTable.length),
+      // Number of entries
+      track.compactlyCodedChunkTable.map((x) => [
+        // Sample-to-chunk table
+        u32(x.firstChunk),
+        // First chunk
+        u32(x.samplesPerChunk),
+        // Samples per chunk
+        u32(1)
+        // Sample description index
+      ])
+    ]);
+  };
+  var stsz = (track) => fullBox("stsz", 0, 0, [
+    u32(0),
+    // Sample size (0 means non-constant size)
+    u32(track.samples.length),
+    // Number of entries
+    track.samples.map((x) => u32(x.size))
+    // Sample size table
+  ]);
+  var stco = (track) => {
+    if (track.finalizedChunks.length > 0 && last(track.finalizedChunks).offset >= 2 ** 32) {
+      return fullBox("co64", 0, 0, [
+        u32(track.finalizedChunks.length),
+        // Number of entries
+        track.finalizedChunks.map((x) => u64(x.offset))
+        // Chunk offset table
+      ]);
+    }
+    return fullBox("stco", 0, 0, [
+      u32(track.finalizedChunks.length),
+      // Number of entries
+      track.finalizedChunks.map((x) => u32(x.offset))
+      // Chunk offset table
+    ]);
+  };
+  var ctts = (track) => {
+    return fullBox("ctts", 0, 0, [
+      u32(track.compositionTimeOffsetTable.length),
+      // Number of entries
+      track.compositionTimeOffsetTable.map((x) => [
+        // Time-to-sample table
+        u32(x.sampleCount),
+        // Sample count
+        u32(x.sampleCompositionTimeOffset)
+        // Sample offset
+      ])
+    ]);
+  };
+  var mvex = (tracks) => {
+    return box("mvex", null, tracks.map(trex));
+  };
+  var trex = (track) => {
+    return fullBox("trex", 0, 0, [
+      u32(track.id),
+      // Track ID
+      u32(1),
+      // Default sample description index
+      u32(0),
+      // Default sample duration
+      u32(0),
+      // Default sample size
+      u32(0)
+      // Default sample flags
+    ]);
+  };
+  var moof = (sequenceNumber, tracks) => {
+    return box("moof", null, [
+      mfhd(sequenceNumber),
+      ...tracks.map(traf)
+    ]);
+  };
+  var mfhd = (sequenceNumber) => {
+    return fullBox("mfhd", 0, 0, [
+      u32(sequenceNumber)
+      // Sequence number
+    ]);
+  };
+  var fragmentSampleFlags = (sample) => {
+    let byte1 = 0;
+    let byte2 = 0;
+    let byte3 = 0;
+    let byte4 = 0;
+    let sampleIsDifferenceSample = sample.type === "delta";
+    byte2 |= +sampleIsDifferenceSample;
+    if (sampleIsDifferenceSample) {
+      byte1 |= 1;
+    } else {
+      byte1 |= 2;
+    }
+    return byte1 << 24 | byte2 << 16 | byte3 << 8 | byte4;
+  };
+  var traf = (track) => {
+    return box("traf", null, [
+      tfhd(track),
+      tfdt(track),
+      trun(track)
+    ]);
+  };
+  var tfhd = (track) => {
+    let tfFlags = 0;
+    tfFlags |= 8;
+    tfFlags |= 16;
+    tfFlags |= 32;
+    tfFlags |= 131072;
+    let referenceSample = track.currentChunk.samples[1] ?? track.currentChunk.samples[0];
+    let referenceSampleInfo = {
+      duration: referenceSample.timescaleUnitsToNextSample,
+      size: referenceSample.size,
+      flags: fragmentSampleFlags(referenceSample)
+    };
+    return fullBox("tfhd", 0, tfFlags, [
+      u32(track.id),
+      // Track ID
+      u32(referenceSampleInfo.duration),
+      // Default sample duration
+      u32(referenceSampleInfo.size),
+      // Default sample size
+      u32(referenceSampleInfo.flags)
+      // Default sample flags
+    ]);
+  };
+  var tfdt = (track) => {
+    return fullBox("tfdt", 1, 0, [
+      u64(intoTimescale(track.currentChunk.startTimestamp, track.timescale))
+      // Base Media Decode Time
+    ]);
+  };
+  var trun = (track) => {
+    let allSampleDurations = track.currentChunk.samples.map((x) => x.timescaleUnitsToNextSample);
+    let allSampleSizes = track.currentChunk.samples.map((x) => x.size);
+    let allSampleFlags = track.currentChunk.samples.map(fragmentSampleFlags);
+    let allSampleCompositionTimeOffsets = track.currentChunk.samples.map((x) => intoTimescale(x.presentationTimestamp - x.decodeTimestamp, track.timescale));
+    let uniqueSampleDurations = new Set(allSampleDurations);
+    let uniqueSampleSizes = new Set(allSampleSizes);
+    let uniqueSampleFlags = new Set(allSampleFlags);
+    let uniqueSampleCompositionTimeOffsets = new Set(allSampleCompositionTimeOffsets);
+    let firstSampleFlagsPresent = uniqueSampleFlags.size === 2 && allSampleFlags[0] !== allSampleFlags[1];
+    let sampleDurationPresent = uniqueSampleDurations.size > 1;
+    let sampleSizePresent = uniqueSampleSizes.size > 1;
+    let sampleFlagsPresent = !firstSampleFlagsPresent && uniqueSampleFlags.size > 1;
+    let sampleCompositionTimeOffsetsPresent = uniqueSampleCompositionTimeOffsets.size > 1 || [...uniqueSampleCompositionTimeOffsets].some((x) => x !== 0);
+    let flags = 0;
+    flags |= 1;
+    flags |= 4 * +firstSampleFlagsPresent;
+    flags |= 256 * +sampleDurationPresent;
+    flags |= 512 * +sampleSizePresent;
+    flags |= 1024 * +sampleFlagsPresent;
+    flags |= 2048 * +sampleCompositionTimeOffsetsPresent;
+    return fullBox("trun", 1, flags, [
+      u32(track.currentChunk.samples.length),
+      // Sample count
+      u32(track.currentChunk.offset - track.currentChunk.moofOffset || 0),
+      // Data offset
+      firstSampleFlagsPresent ? u32(allSampleFlags[0]) : [],
+      track.currentChunk.samples.map((_, i) => [
+        sampleDurationPresent ? u32(allSampleDurations[i]) : [],
+        // Sample duration
+        sampleSizePresent ? u32(allSampleSizes[i]) : [],
+        // Sample size
+        sampleFlagsPresent ? u32(allSampleFlags[i]) : [],
+        // Sample flags
+        // Sample composition time offsets
+        sampleCompositionTimeOffsetsPresent ? i32(allSampleCompositionTimeOffsets[i]) : []
+      ])
+    ]);
+  };
+  var mfra = (tracks) => {
+    return box("mfra", null, [
+      ...tracks.map(tfra),
+      mfro()
+    ]);
+  };
+  var tfra = (track, trackIndex) => {
+    let version = 1;
+    return fullBox("tfra", version, 0, [
+      u32(track.id),
+      // Track ID
+      u32(63),
+      // This specifies that traf number, trun number and sample number are 32-bit ints
+      u32(track.finalizedChunks.length),
+      // Number of entries
+      track.finalizedChunks.map((chunk) => [
+        u64(intoTimescale(chunk.startTimestamp, track.timescale)),
+        // Time
+        u64(chunk.moofOffset),
+        // moof offset
+        u32(trackIndex + 1),
+        // traf number
+        u32(1),
+        // trun number
+        u32(1)
+        // Sample number
+      ])
+    ]);
+  };
+  var mfro = () => {
+    return fullBox("mfro", 0, 0, [
+      // This value needs to be overwritten manually from the outside, where the actual size of the enclosing mfra box
+      // is known
+      u32(0)
+      // Size
+    ]);
+  };
+  var VIDEO_CODEC_TO_BOX_NAME = {
+    "avc": "avc1",
+    "hevc": "hvc1",
+    "vp9": "vp09",
+    "av1": "av01"
+  };
+  var VIDEO_CODEC_TO_CONFIGURATION_BOX = {
+    "avc": avcC,
+    "hevc": hvcC,
+    "vp9": vpcC,
+    "av1": av1C
+  };
+  var AUDIO_CODEC_TO_BOX_NAME = {
+    "aac": "mp4a",
+    "opus": "Opus"
+  };
+  var AUDIO_CODEC_TO_CONFIGURATION_BOX = {
+    "aac": esds,
+    "opus": dOps
+  };
+
+  // src/target.ts
+  var isTarget = Symbol("isTarget");
+  var Target = class {
+  };
+  isTarget;
+  var ArrayBufferTarget = class extends Target {
+    constructor() {
+      super(...arguments);
+      this.buffer = null;
+    }
+  };
+  var StreamTarget = class extends Target {
+    constructor(options) {
+      super();
+      this.options = options;
+      if (typeof options !== "object") {
+        throw new TypeError("StreamTarget requires an options object to be passed to its constructor.");
+      }
+      if (options.onData) {
+        if (typeof options.onData !== "function") {
+          throw new TypeError("options.onData, when provided, must be a function.");
+        }
+        if (options.onData.length < 2) {
+          throw new TypeError(
+            "options.onData, when provided, must be a function that takes in at least two arguments (data and position). Ignoring the position argument, which specifies the byte offset at which the data is to be written, can lead to broken outputs."
+          );
+        }
+      }
+      if (options.chunked !== void 0 && typeof options.chunked !== "boolean") {
+        throw new TypeError("options.chunked, when provided, must be a boolean.");
+      }
+      if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
+        throw new TypeError("options.chunkSize, when provided, must be an integer and not smaller than 1024.");
+      }
+    }
+  };
+  var FileSystemWritableFileStreamTarget = class extends Target {
+    constructor(stream, options) {
+      super();
+      this.stream = stream;
+      this.options = options;
+      if (!(stream instanceof FileSystemWritableFileStream)) {
+        throw new TypeError("FileSystemWritableFileStreamTarget requires a FileSystemWritableFileStream instance.");
+      }
+      if (options !== void 0 && typeof options !== "object") {
+        throw new TypeError("FileSystemWritableFileStreamTarget's options, when provided, must be an object.");
+      }
+      if (options) {
+        if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
+          throw new TypeError("options.chunkSize, when provided, must be a positive integer");
+        }
+      }
+    }
+  };
+
+  // src/writer.ts
+  var _helper, _helperView;
+  var Writer = class {
+    constructor() {
+      this.pos = 0;
+      __privateAdd(this, _helper, new Uint8Array(8));
+      __privateAdd(this, _helperView, new DataView(__privateGet(this, _helper).buffer));
+      /**
+       * Stores the position from the start of the file to where boxes elements have been written. This is used to
+       * rewrite/edit elements that were already added before, and to measure sizes of things.
+       */
+      this.offsets = /* @__PURE__ */ new WeakMap();
+    }
+    /** Sets the current position for future writes to a new one. */
+    seek(newPos) {
+      this.pos = newPos;
+    }
+    writeU32(value) {
+      __privateGet(this, _helperView).setUint32(0, value, false);
+      this.write(__privateGet(this, _helper).subarray(0, 4));
+    }
+    writeU64(value) {
+      __privateGet(this, _helperView).setUint32(0, Math.floor(value / 2 ** 32), false);
+      __privateGet(this, _helperView).setUint32(4, value, false);
+      this.write(__privateGet(this, _helper).subarray(0, 8));
+    }
+    writeAscii(text) {
+      for (let i = 0; i < text.length; i++) {
+        __privateGet(this, _helperView).setUint8(i % 8, text.charCodeAt(i));
+        if (i % 8 === 7)
+          this.write(__privateGet(this, _helper));
+      }
+      if (text.length % 8 !== 0) {
+        this.write(__privateGet(this, _helper).subarray(0, text.length % 8));
+      }
+    }
+    writeBox(box2) {
+      this.offsets.set(box2, this.pos);
+      if (box2.contents && !box2.children) {
+        this.writeBoxHeader(box2, box2.size ?? box2.contents.byteLength + 8);
+        this.write(box2.contents);
+      } else {
+        let startPos = this.pos;
+        this.writeBoxHeader(box2, 0);
+        if (box2.contents)
+          this.write(box2.contents);
+        if (box2.children) {
+          for (let child of box2.children)
+            if (child)
+              this.writeBox(child);
+        }
+        let endPos = this.pos;
+        let size = box2.size ?? endPos - startPos;
+        this.seek(startPos);
+        this.writeBoxHeader(box2, size);
+        this.seek(endPos);
+      }
+    }
+    writeBoxHeader(box2, size) {
+      this.writeU32(box2.largeSize ? 1 : size);
+      this.writeAscii(box2.type);
+      if (box2.largeSize)
+        this.writeU64(size);
+    }
+    measureBoxHeader(box2) {
+      return 8 + (box2.largeSize ? 8 : 0);
+    }
+    patchBox(box2) {
+      let endPos = this.pos;
+      this.seek(this.offsets.get(box2));
+      this.writeBox(box2);
+      this.seek(endPos);
+    }
+    measureBox(box2) {
+      if (box2.contents && !box2.children) {
+        let headerSize = this.measureBoxHeader(box2);
+        return headerSize + box2.contents.byteLength;
+      } else {
+        let result = this.measureBoxHeader(box2);
+        if (box2.contents)
+          result += box2.contents.byteLength;
+        if (box2.children) {
+          for (let child of box2.children)
+            if (child)
+              result += this.measureBox(child);
+        }
+        return result;
+      }
+    }
+  };
+  _helper = new WeakMap();
+  _helperView = new WeakMap();
+  var _target, _buffer, _bytes, _maxPos, _ensureSize, ensureSize_fn;
+  var ArrayBufferTargetWriter = class extends Writer {
+    constructor(target) {
+      super();
+      __privateAdd(this, _ensureSize);
+      __privateAdd(this, _target, void 0);
+      __privateAdd(this, _buffer, new ArrayBuffer(2 ** 16));
+      __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
+      __privateAdd(this, _maxPos, 0);
+      __privateSet(this, _target, target);
+    }
+    write(data) {
+      __privateMethod(this, _ensureSize, ensureSize_fn).call(this, this.pos + data.byteLength);
+      __privateGet(this, _bytes).set(data, this.pos);
+      this.pos += data.byteLength;
+      __privateSet(this, _maxPos, Math.max(__privateGet(this, _maxPos), this.pos));
+    }
+    finalize() {
+      __privateMethod(this, _ensureSize, ensureSize_fn).call(this, this.pos);
+      __privateGet(this, _target).buffer = __privateGet(this, _buffer).slice(0, Math.max(__privateGet(this, _maxPos), this.pos));
+    }
+  };
+  _target = new WeakMap();
+  _buffer = new WeakMap();
+  _bytes = new WeakMap();
+  _maxPos = new WeakMap();
+  _ensureSize = new WeakSet();
+  ensureSize_fn = function(size) {
+    let newLength = __privateGet(this, _buffer).byteLength;
+    while (newLength < size)
+      newLength *= 2;
+    if (newLength === __privateGet(this, _buffer).byteLength)
+      return;
+    let newBuffer = new ArrayBuffer(newLength);
+    let newBytes = new Uint8Array(newBuffer);
+    newBytes.set(__privateGet(this, _bytes), 0);
+    __privateSet(this, _buffer, newBuffer);
+    __privateSet(this, _bytes, newBytes);
+  };
+  var DEFAULT_CHUNK_SIZE = 2 ** 24;
+  var MAX_CHUNKS_AT_ONCE = 2;
+  var _target2, _sections, _chunked, _chunkSize, _chunks, _writeDataIntoChunks, writeDataIntoChunks_fn, _insertSectionIntoChunk, insertSectionIntoChunk_fn, _createChunk, createChunk_fn, _flushChunks, flushChunks_fn;
+  var StreamTargetWriter = class extends Writer {
+    constructor(target) {
+      super();
+      __privateAdd(this, _writeDataIntoChunks);
+      __privateAdd(this, _insertSectionIntoChunk);
+      __privateAdd(this, _createChunk);
+      __privateAdd(this, _flushChunks);
+      __privateAdd(this, _target2, void 0);
+      __privateAdd(this, _sections, []);
+      __privateAdd(this, _chunked, void 0);
+      __privateAdd(this, _chunkSize, void 0);
+      /**
+       * The data is divided up into fixed-size chunks, whose contents are first filled in RAM and then flushed out.
+       * A chunk is flushed if all of its contents have been written.
+       */
+      __privateAdd(this, _chunks, []);
+      __privateSet(this, _target2, target);
+      __privateSet(this, _chunked, target.options?.chunked ?? false);
+      __privateSet(this, _chunkSize, target.options?.chunkSize ?? DEFAULT_CHUNK_SIZE);
+    }
+    write(data) {
+      __privateGet(this, _sections).push({
+        data: data.slice(),
+        start: this.pos
+      });
+      this.pos += data.byteLength;
+    }
+    flush() {
+      if (__privateGet(this, _sections).length === 0)
+        return;
+      let chunks = [];
+      let sorted = [...__privateGet(this, _sections)].sort((a, b) => a.start - b.start);
+      chunks.push({
+        start: sorted[0].start,
+        size: sorted[0].data.byteLength
+      });
+      for (let i = 1; i < sorted.length; i++) {
+        let lastChunk = chunks[chunks.length - 1];
+        let section = sorted[i];
+        if (section.start <= lastChunk.start + lastChunk.size) {
+          lastChunk.size = Math.max(lastChunk.size, section.start + section.data.byteLength - lastChunk.start);
+        } else {
+          chunks.push({
+            start: section.start,
+            size: section.data.byteLength
+          });
+        }
+      }
+      for (let chunk of chunks) {
+        chunk.data = new Uint8Array(chunk.size);
+        for (let section of __privateGet(this, _sections)) {
+          if (chunk.start <= section.start && section.start < chunk.start + chunk.size) {
+            chunk.data.set(section.data, section.start - chunk.start);
+          }
+        }
+        if (__privateGet(this, _chunked)) {
+          __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, chunk.data, chunk.start);
+          __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
+        } else {
+          __privateGet(this, _target2).options.onData?.(chunk.data, chunk.start);
+        }
+      }
+      __privateGet(this, _sections).length = 0;
+    }
+    finalize() {
+      if (__privateGet(this, _chunked)) {
+        __privateMethod(this, _flushChunks, flushChunks_fn).call(this, true);
+      }
+    }
+  };
+  _target2 = new WeakMap();
+  _sections = new WeakMap();
+  _chunked = new WeakMap();
+  _chunkSize = new WeakMap();
+  _chunks = new WeakMap();
+  _writeDataIntoChunks = new WeakSet();
+  writeDataIntoChunks_fn = function(data, position) {
+    let chunkIndex = __privateGet(this, _chunks).findIndex((x) => x.start <= position && position < x.start + __privateGet(this, _chunkSize));
+    if (chunkIndex === -1)
+      chunkIndex = __privateMethod(this, _createChunk, createChunk_fn).call(this, position);
+    let chunk = __privateGet(this, _chunks)[chunkIndex];
+    let relativePosition = position - chunk.start;
+    let toWrite = data.subarray(0, Math.min(__privateGet(this, _chunkSize) - relativePosition, data.byteLength));
+    chunk.data.set(toWrite, relativePosition);
+    let section = {
+      start: relativePosition,
+      end: relativePosition + toWrite.byteLength
+    };
+    __privateMethod(this, _insertSectionIntoChunk, insertSectionIntoChunk_fn).call(this, chunk, section);
+    if (chunk.written[0].start === 0 && chunk.written[0].end === __privateGet(this, _chunkSize)) {
+      chunk.shouldFlush = true;
+    }
+    if (__privateGet(this, _chunks).length > MAX_CHUNKS_AT_ONCE) {
+      for (let i = 0; i < __privateGet(this, _chunks).length - 1; i++) {
+        __privateGet(this, _chunks)[i].shouldFlush = true;
+      }
+      __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
+    }
+    if (toWrite.byteLength < data.byteLength) {
+      __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, data.subarray(toWrite.byteLength), position + toWrite.byteLength);
+    }
+  };
+  _insertSectionIntoChunk = new WeakSet();
+  insertSectionIntoChunk_fn = function(chunk, section) {
+    let low = 0;
+    let high = chunk.written.length - 1;
+    let index = -1;
+    while (low <= high) {
+      let mid = Math.floor(low + (high - low + 1) / 2);
+      if (chunk.written[mid].start <= section.start) {
+        low = mid + 1;
+        index = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    chunk.written.splice(index + 1, 0, section);
+    if (index === -1 || chunk.written[index].end < section.start)
+      index++;
+    while (index < chunk.written.length - 1 && chunk.written[index].end >= chunk.written[index + 1].start) {
+      chunk.written[index].end = Math.max(chunk.written[index].end, chunk.written[index + 1].end);
+      chunk.written.splice(index + 1, 1);
+    }
+  };
+  _createChunk = new WeakSet();
+  createChunk_fn = function(includesPosition) {
+    let start = Math.floor(includesPosition / __privateGet(this, _chunkSize)) * __privateGet(this, _chunkSize);
+    let chunk = {
+      start,
+      data: new Uint8Array(__privateGet(this, _chunkSize)),
+      written: [],
+      shouldFlush: false
+    };
+    __privateGet(this, _chunks).push(chunk);
+    __privateGet(this, _chunks).sort((a, b) => a.start - b.start);
+    return __privateGet(this, _chunks).indexOf(chunk);
+  };
+  _flushChunks = new WeakSet();
+  flushChunks_fn = function(force = false) {
+    for (let i = 0; i < __privateGet(this, _chunks).length; i++) {
+      let chunk = __privateGet(this, _chunks)[i];
+      if (!chunk.shouldFlush && !force)
+        continue;
+      for (let section of chunk.written) {
+        __privateGet(this, _target2).options.onData?.(
+          chunk.data.subarray(section.start, section.end),
+          chunk.start + section.start
+        );
+      }
+      __privateGet(this, _chunks).splice(i--, 1);
+    }
+  };
+  var FileSystemWritableFileStreamTargetWriter = class extends StreamTargetWriter {
+    constructor(target) {
+      super(new StreamTarget({
+        onData: (data, position) => target.stream.write({
+          type: "write",
+          data,
+          position
+        }),
+        chunked: true,
+        chunkSize: target.options?.chunkSize
+      }));
+    }
+  };
+
+  // src/muxer.ts
+  var GLOBAL_TIMESCALE = 1e3;
+  var SUPPORTED_VIDEO_CODECS = ["avc", "hevc", "vp9", "av1"];
+  var SUPPORTED_AUDIO_CODECS = ["aac", "opus"];
+  var TIMESTAMP_OFFSET = 2082844800;
+  var FIRST_TIMESTAMP_BEHAVIORS = ["strict", "offset", "cross-track-offset"];
+  var _options, _writer, _ftypSize, _mdat, _videoTrack, _audioTrack, _creationTime, _finalizedChunks, _nextFragmentNumber, _videoSampleQueue, _audioSampleQueue, _finalized, _validateOptions, validateOptions_fn, _writeHeader, writeHeader_fn, _computeMoovSizeUpperBound, computeMoovSizeUpperBound_fn, _prepareTracks, prepareTracks_fn, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn, _createSampleForTrack, createSampleForTrack_fn, _addSampleToTrack, addSampleToTrack_fn, _validateTimestamp, validateTimestamp_fn, _finalizeCurrentChunk, finalizeCurrentChunk_fn, _finalizeFragment, finalizeFragment_fn, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn, _ensureNotFinalized, ensureNotFinalized_fn;
+  var Muxer = class {
+    constructor(options) {
+      __privateAdd(this, _validateOptions);
+      __privateAdd(this, _writeHeader);
+      __privateAdd(this, _computeMoovSizeUpperBound);
+      __privateAdd(this, _prepareTracks);
+      // https://wiki.multimedia.cx/index.php/MPEG-4_Audio
+      __privateAdd(this, _generateMpeg4AudioSpecificConfig);
+      __privateAdd(this, _createSampleForTrack);
+      __privateAdd(this, _addSampleToTrack);
+      __privateAdd(this, _validateTimestamp);
+      __privateAdd(this, _finalizeCurrentChunk);
+      __privateAdd(this, _finalizeFragment);
+      __privateAdd(this, _maybeFlushStreamingTargetWriter);
+      __privateAdd(this, _ensureNotFinalized);
+      __privateAdd(this, _options, void 0);
+      __privateAdd(this, _writer, void 0);
+      __privateAdd(this, _ftypSize, void 0);
+      __privateAdd(this, _mdat, void 0);
+      __privateAdd(this, _videoTrack, null);
+      __privateAdd(this, _audioTrack, null);
+      __privateAdd(this, _creationTime, Math.floor(Date.now() / 1e3) + TIMESTAMP_OFFSET);
+      __privateAdd(this, _finalizedChunks, []);
+      // Fields for fragmented MP4:
+      __privateAdd(this, _nextFragmentNumber, 1);
+      __privateAdd(this, _videoSampleQueue, []);
+      __privateAdd(this, _audioSampleQueue, []);
+      __privateAdd(this, _finalized, false);
+      __privateMethod(this, _validateOptions, validateOptions_fn).call(this, options);
+      options.video = deepClone(options.video);
+      options.audio = deepClone(options.audio);
+      options.fastStart = deepClone(options.fastStart);
+      this.target = options.target;
+      __privateSet(this, _options, {
+        firstTimestampBehavior: "strict",
+        ...options
+      });
+      if (options.target instanceof ArrayBufferTarget) {
+        __privateSet(this, _writer, new ArrayBufferTargetWriter(options.target));
+      } else if (options.target instanceof StreamTarget) {
+        __privateSet(this, _writer, new StreamTargetWriter(options.target));
+      } else if (options.target instanceof FileSystemWritableFileStreamTarget) {
+        __privateSet(this, _writer, new FileSystemWritableFileStreamTargetWriter(options.target));
+      } else {
+        throw new Error(`Invalid target: ${options.target}`);
+      }
+      __privateMethod(this, _prepareTracks, prepareTracks_fn).call(this);
+      __privateMethod(this, _writeHeader, writeHeader_fn).call(this);
+    }
+    addVideoChunk(sample, meta, timestamp, compositionTimeOffset) {
+      if (!(sample instanceof EncodedVideoChunk)) {
+        throw new TypeError("addVideoChunk's first argument (sample) must be of type EncodedVideoChunk.");
+      }
+      if (meta && typeof meta !== "object") {
+        throw new TypeError("addVideoChunk's second argument (meta), when provided, must be an object.");
+      }
+      if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        throw new TypeError(
+          "addVideoChunk's third argument (timestamp), when provided, must be a non-negative real number."
+        );
+      }
+      if (compositionTimeOffset !== void 0 && !Number.isFinite(compositionTimeOffset)) {
+        throw new TypeError(
+          "addVideoChunk's fourth argument (compositionTimeOffset), when provided, must be a real number."
+        );
+      }
+      let data = new Uint8Array(sample.byteLength);
+      sample.copyTo(data);
+      this.addVideoChunkRaw(
+        data,
+        sample.type,
+        timestamp ?? sample.timestamp,
+        sample.duration,
+        meta,
+        compositionTimeOffset
+      );
+    }
+    addVideoChunkRaw(data, type, timestamp, duration, meta, compositionTimeOffset) {
+      if (!(data instanceof Uint8Array)) {
+        throw new TypeError("addVideoChunkRaw's first argument (data) must be an instance of Uint8Array.");
+      }
+      if (type !== "key" && type !== "delta") {
+        throw new TypeError("addVideoChunkRaw's second argument (type) must be either 'key' or 'delta'.");
+      }
+      if (!Number.isFinite(timestamp) || timestamp < 0) {
+        throw new TypeError("addVideoChunkRaw's third argument (timestamp) must be a non-negative real number.");
+      }
+      if (!Number.isFinite(duration) || duration < 0) {
+        throw new TypeError("addVideoChunkRaw's fourth argument (duration) must be a non-negative real number.");
+      }
+      if (meta && typeof meta !== "object") {
+        throw new TypeError("addVideoChunkRaw's fifth argument (meta), when provided, must be an object.");
+      }
+      if (compositionTimeOffset !== void 0 && !Number.isFinite(compositionTimeOffset)) {
+        throw new TypeError(
+          "addVideoChunkRaw's sixth argument (compositionTimeOffset), when provided, must be a real number."
+        );
+      }
+      __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
+      if (!__privateGet(this, _options).video)
+        throw new Error("No video track declared.");
+      if (typeof __privateGet(this, _options).fastStart === "object" && __privateGet(this, _videoTrack).samples.length === __privateGet(this, _options).fastStart.expectedVideoChunks) {
+        throw new Error(`Cannot add more video chunks than specified in 'fastStart' (${__privateGet(this, _options).fastStart.expectedVideoChunks}).`);
+      }
+      let videoSample = __privateMethod(this, _createSampleForTrack, createSampleForTrack_fn).call(this, __privateGet(this, _videoTrack), data, type, timestamp, duration, meta, compositionTimeOffset);
+      if (__privateGet(this, _options).fastStart === "fragmented" && __privateGet(this, _audioTrack)) {
+        while (__privateGet(this, _audioSampleQueue).length > 0 && __privateGet(this, _audioSampleQueue)[0].decodeTimestamp <= videoSample.decodeTimestamp) {
+          let audioSample = __privateGet(this, _audioSampleQueue).shift();
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _audioTrack), audioSample);
+        }
+        if (videoSample.decodeTimestamp <= __privateGet(this, _audioTrack).lastDecodeTimestamp) {
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _videoTrack), videoSample);
+        } else {
+          __privateGet(this, _videoSampleQueue).push(videoSample);
+        }
+      } else {
+        __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _videoTrack), videoSample);
+      }
+    }
+    addAudioChunk(sample, meta, timestamp) {
+      if (!(sample instanceof EncodedAudioChunk)) {
+        throw new TypeError("addAudioChunk's first argument (sample) must be of type EncodedAudioChunk.");
+      }
+      if (meta && typeof meta !== "object") {
+        throw new TypeError("addAudioChunk's second argument (meta), when provided, must be an object.");
+      }
+      if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        throw new TypeError(
+          "addAudioChunk's third argument (timestamp), when provided, must be a non-negative real number."
+        );
+      }
+      let data = new Uint8Array(sample.byteLength);
+      sample.copyTo(data);
+      this.addAudioChunkRaw(data, sample.type, timestamp ?? sample.timestamp, sample.duration, meta);
+    }
+    addAudioChunkRaw(data, type, timestamp, duration, meta) {
+      if (!(data instanceof Uint8Array)) {
+        throw new TypeError("addAudioChunkRaw's first argument (data) must be an instance of Uint8Array.");
+      }
+      if (type !== "key" && type !== "delta") {
+        throw new TypeError("addAudioChunkRaw's second argument (type) must be either 'key' or 'delta'.");
+      }
+      if (!Number.isFinite(timestamp) || timestamp < 0) {
+        throw new TypeError("addAudioChunkRaw's third argument (timestamp) must be a non-negative real number.");
+      }
+      if (!Number.isFinite(duration) || duration < 0) {
+        throw new TypeError("addAudioChunkRaw's fourth argument (duration) must be a non-negative real number.");
+      }
+      if (meta && typeof meta !== "object") {
+        throw new TypeError("addAudioChunkRaw's fifth argument (meta), when provided, must be an object.");
+      }
+      __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
+      if (!__privateGet(this, _options).audio)
+        throw new Error("No audio track declared.");
+      if (typeof __privateGet(this, _options).fastStart === "object" && __privateGet(this, _audioTrack).samples.length === __privateGet(this, _options).fastStart.expectedAudioChunks) {
+        throw new Error(`Cannot add more audio chunks than specified in 'fastStart' (${__privateGet(this, _options).fastStart.expectedAudioChunks}).`);
+      }
+      let audioSample = __privateMethod(this, _createSampleForTrack, createSampleForTrack_fn).call(this, __privateGet(this, _audioTrack), data, type, timestamp, duration, meta);
+      if (__privateGet(this, _options).fastStart === "fragmented" && __privateGet(this, _videoTrack)) {
+        while (__privateGet(this, _videoSampleQueue).length > 0 && __privateGet(this, _videoSampleQueue)[0].decodeTimestamp <= audioSample.decodeTimestamp) {
+          let videoSample = __privateGet(this, _videoSampleQueue).shift();
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _videoTrack), videoSample);
+        }
+        if (audioSample.decodeTimestamp <= __privateGet(this, _videoTrack).lastDecodeTimestamp) {
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _audioTrack), audioSample);
+        } else {
+          __privateGet(this, _audioSampleQueue).push(audioSample);
+        }
+      } else {
+        __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _audioTrack), audioSample);
+      }
+    }
+    /** Finalizes the file, making it ready for use. Must be called after all video and audio chunks have been added. */
+    finalize() {
+      if (__privateGet(this, _finalized)) {
+        throw new Error("Cannot finalize a muxer more than once.");
+      }
+      if (__privateGet(this, _options).fastStart === "fragmented") {
+        for (let videoSample of __privateGet(this, _videoSampleQueue))
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _videoTrack), videoSample);
+        for (let audioSample of __privateGet(this, _audioSampleQueue))
+          __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _audioTrack), audioSample);
+        __privateMethod(this, _finalizeFragment, finalizeFragment_fn).call(this, false);
+      } else {
+        if (__privateGet(this, _videoTrack))
+          __privateMethod(this, _finalizeCurrentChunk, finalizeCurrentChunk_fn).call(this, __privateGet(this, _videoTrack));
+        if (__privateGet(this, _audioTrack))
+          __privateMethod(this, _finalizeCurrentChunk, finalizeCurrentChunk_fn).call(this, __privateGet(this, _audioTrack));
+      }
+      let tracks = [__privateGet(this, _videoTrack), __privateGet(this, _audioTrack)].filter(Boolean);
+      if (__privateGet(this, _options).fastStart === "in-memory") {
+        let mdatSize;
+        for (let i = 0; i < 2; i++) {
+          let movieBox2 = moov(tracks, __privateGet(this, _creationTime));
+          let movieBoxSize = __privateGet(this, _writer).measureBox(movieBox2);
+          mdatSize = __privateGet(this, _writer).measureBox(__privateGet(this, _mdat));
+          let currentChunkPos = __privateGet(this, _writer).pos + movieBoxSize + mdatSize;
+          for (let chunk of __privateGet(this, _finalizedChunks)) {
+            chunk.offset = currentChunkPos;
+            for (let { data } of chunk.samples) {
+              currentChunkPos += data.byteLength;
+              mdatSize += data.byteLength;
+            }
+          }
+          if (currentChunkPos < 2 ** 32)
+            break;
+          if (mdatSize >= 2 ** 32)
+            __privateGet(this, _mdat).largeSize = true;
+        }
+        let movieBox = moov(tracks, __privateGet(this, _creationTime));
+        __privateGet(this, _writer).writeBox(movieBox);
+        __privateGet(this, _mdat).size = mdatSize;
+        __privateGet(this, _writer).writeBox(__privateGet(this, _mdat));
+        for (let chunk of __privateGet(this, _finalizedChunks)) {
+          for (let sample of chunk.samples) {
+            __privateGet(this, _writer).write(sample.data);
+            sample.data = null;
+          }
+        }
+      } else if (__privateGet(this, _options).fastStart === "fragmented") {
+        let startPos = __privateGet(this, _writer).pos;
+        let mfraBox = mfra(tracks);
+        __privateGet(this, _writer).writeBox(mfraBox);
+        let mfraBoxSize = __privateGet(this, _writer).pos - startPos;
+        __privateGet(this, _writer).seek(__privateGet(this, _writer).pos - 4);
+        __privateGet(this, _writer).writeU32(mfraBoxSize);
+      } else {
+        let mdatPos = __privateGet(this, _writer).offsets.get(__privateGet(this, _mdat));
+        let mdatSize = __privateGet(this, _writer).pos - mdatPos;
+        __privateGet(this, _mdat).size = mdatSize;
+        __privateGet(this, _mdat).largeSize = mdatSize >= 2 ** 32;
+        __privateGet(this, _writer).patchBox(__privateGet(this, _mdat));
+        let movieBox = moov(tracks, __privateGet(this, _creationTime));
+        if (typeof __privateGet(this, _options).fastStart === "object") {
+          __privateGet(this, _writer).seek(__privateGet(this, _ftypSize));
+          __privateGet(this, _writer).writeBox(movieBox);
+          let remainingBytes = mdatPos - __privateGet(this, _writer).pos;
+          __privateGet(this, _writer).writeBox(free(remainingBytes));
+        } else {
+          __privateGet(this, _writer).writeBox(movieBox);
+        }
+      }
+      __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
+      __privateGet(this, _writer).finalize();
+      __privateSet(this, _finalized, true);
+    }
+  };
+  _options = new WeakMap();
+  _writer = new WeakMap();
+  _ftypSize = new WeakMap();
+  _mdat = new WeakMap();
+  _videoTrack = new WeakMap();
+  _audioTrack = new WeakMap();
+  _creationTime = new WeakMap();
+  _finalizedChunks = new WeakMap();
+  _nextFragmentNumber = new WeakMap();
+  _videoSampleQueue = new WeakMap();
+  _audioSampleQueue = new WeakMap();
+  _finalized = new WeakMap();
+  _validateOptions = new WeakSet();
+  validateOptions_fn = function(options) {
+    if (typeof options !== "object") {
+      throw new TypeError("The muxer requires an options object to be passed to its constructor.");
+    }
+    if (!(options.target instanceof Target)) {
+      throw new TypeError("The target must be provided and an instance of Target.");
+    }
+    if (options.video) {
+      if (!SUPPORTED_VIDEO_CODECS.includes(options.video.codec)) {
+        throw new TypeError(`Unsupported video codec: ${options.video.codec}`);
+      }
+      if (!Number.isInteger(options.video.width) || options.video.width <= 0) {
+        throw new TypeError(`Invalid video width: ${options.video.width}. Must be a positive integer.`);
+      }
+      if (!Number.isInteger(options.video.height) || options.video.height <= 0) {
+        throw new TypeError(`Invalid video height: ${options.video.height}. Must be a positive integer.`);
+      }
+      const videoRotation = options.video.rotation;
+      if (typeof videoRotation === "number" && ![0, 90, 180, 270].includes(videoRotation)) {
+        throw new TypeError(`Invalid video rotation: ${videoRotation}. Has to be 0, 90, 180 or 270.`);
+      } else if (Array.isArray(videoRotation) && (videoRotation.length !== 9 || videoRotation.some((value) => typeof value !== "number"))) {
+        throw new TypeError(`Invalid video transformation matrix: ${videoRotation.join()}`);
+      }
+      if (options.video.frameRate !== void 0 && (!Number.isInteger(options.video.frameRate) || options.video.frameRate <= 0)) {
+        throw new TypeError(
+          `Invalid video frame rate: ${options.video.frameRate}. Must be a positive integer.`
+        );
+      }
+    }
+    if (options.audio) {
+      if (!SUPPORTED_AUDIO_CODECS.includes(options.audio.codec)) {
+        throw new TypeError(`Unsupported audio codec: ${options.audio.codec}`);
+      }
+      if (!Number.isInteger(options.audio.numberOfChannels) || options.audio.numberOfChannels <= 0) {
+        throw new TypeError(
+          `Invalid number of audio channels: ${options.audio.numberOfChannels}. Must be a positive integer.`
+        );
+      }
+      if (!Number.isInteger(options.audio.sampleRate) || options.audio.sampleRate <= 0) {
+        throw new TypeError(
+          `Invalid audio sample rate: ${options.audio.sampleRate}. Must be a positive integer.`
+        );
+      }
+    }
+    if (options.firstTimestampBehavior && !FIRST_TIMESTAMP_BEHAVIORS.includes(options.firstTimestampBehavior)) {
+      throw new TypeError(`Invalid first timestamp behavior: ${options.firstTimestampBehavior}`);
+    }
+    if (typeof options.fastStart === "object") {
+      if (options.video) {
+        if (options.fastStart.expectedVideoChunks === void 0) {
+          throw new TypeError(`'fastStart' is an object but is missing property 'expectedVideoChunks'.`);
+        } else if (!Number.isInteger(options.fastStart.expectedVideoChunks) || options.fastStart.expectedVideoChunks < 0) {
+          throw new TypeError(`'expectedVideoChunks' must be a non-negative integer.`);
+        }
+      }
+      if (options.audio) {
+        if (options.fastStart.expectedAudioChunks === void 0) {
+          throw new TypeError(`'fastStart' is an object but is missing property 'expectedAudioChunks'.`);
+        } else if (!Number.isInteger(options.fastStart.expectedAudioChunks) || options.fastStart.expectedAudioChunks < 0) {
+          throw new TypeError(`'expectedAudioChunks' must be a non-negative integer.`);
+        }
+      }
+    } else if (![false, "in-memory", "fragmented"].includes(options.fastStart)) {
+      throw new TypeError(`'fastStart' option must be false, 'in-memory', 'fragmented' or an object.`);
+    }
+    if (options.minFragmentDuration !== void 0 && (!Number.isFinite(options.minFragmentDuration) || options.minFragmentDuration < 0)) {
+      throw new TypeError(`'minFragmentDuration' must be a non-negative number.`);
+    }
+  };
+  _writeHeader = new WeakSet();
+  writeHeader_fn = function() {
+    __privateGet(this, _writer).writeBox(ftyp({
+      holdsAvc: __privateGet(this, _options).video?.codec === "avc",
+      fragmented: __privateGet(this, _options).fastStart === "fragmented"
+    }));
+    __privateSet(this, _ftypSize, __privateGet(this, _writer).pos);
+    if (__privateGet(this, _options).fastStart === "in-memory") {
+      __privateSet(this, _mdat, mdat(false));
+    } else if (__privateGet(this, _options).fastStart === "fragmented") {
+    } else {
+      if (typeof __privateGet(this, _options).fastStart === "object") {
+        let moovSizeUpperBound = __privateMethod(this, _computeMoovSizeUpperBound, computeMoovSizeUpperBound_fn).call(this);
+        __privateGet(this, _writer).seek(__privateGet(this, _writer).pos + moovSizeUpperBound);
+      }
+      __privateSet(this, _mdat, mdat(true));
+      __privateGet(this, _writer).writeBox(__privateGet(this, _mdat));
+    }
+    __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
+  };
+  _computeMoovSizeUpperBound = new WeakSet();
+  computeMoovSizeUpperBound_fn = function() {
+    if (typeof __privateGet(this, _options).fastStart !== "object")
+      return;
+    let upperBound = 0;
+    let sampleCounts = [
+      __privateGet(this, _options).fastStart.expectedVideoChunks,
+      __privateGet(this, _options).fastStart.expectedAudioChunks
+    ];
+    for (let n of sampleCounts) {
+      if (!n)
+        continue;
+      upperBound += (4 + 4) * Math.ceil(2 / 3 * n);
+      upperBound += 4 * n;
+      upperBound += (4 + 4 + 4) * Math.ceil(2 / 3 * n);
+      upperBound += 4 * n;
+      upperBound += 8 * n;
+    }
+    upperBound += 4096;
+    return upperBound;
+  };
+  _prepareTracks = new WeakSet();
+  prepareTracks_fn = function() {
+    if (__privateGet(this, _options).video) {
+      __privateSet(this, _videoTrack, {
+        id: 1,
+        info: {
+          type: "video",
+          codec: __privateGet(this, _options).video.codec,
+          width: __privateGet(this, _options).video.width,
+          height: __privateGet(this, _options).video.height,
+          rotation: __privateGet(this, _options).video.rotation ?? 0,
+          decoderConfig: null
+        },
+        // The fallback contains many common frame rates as factors
+        timescale: __privateGet(this, _options).video.frameRate ?? 57600,
+        samples: [],
+        finalizedChunks: [],
+        currentChunk: null,
+        firstDecodeTimestamp: void 0,
+        lastDecodeTimestamp: -1,
+        timeToSampleTable: [],
+        compositionTimeOffsetTable: [],
+        lastTimescaleUnits: null,
+        lastSample: null,
+        compactlyCodedChunkTable: []
+      });
+    }
+    if (__privateGet(this, _options).audio) {
+      __privateSet(this, _audioTrack, {
+        id: __privateGet(this, _options).video ? 2 : 1,
+        info: {
+          type: "audio",
+          codec: __privateGet(this, _options).audio.codec,
+          numberOfChannels: __privateGet(this, _options).audio.numberOfChannels,
+          sampleRate: __privateGet(this, _options).audio.sampleRate,
+          decoderConfig: null
+        },
+        timescale: __privateGet(this, _options).audio.sampleRate,
+        samples: [],
+        finalizedChunks: [],
+        currentChunk: null,
+        firstDecodeTimestamp: void 0,
+        lastDecodeTimestamp: -1,
+        timeToSampleTable: [],
+        compositionTimeOffsetTable: [],
+        lastTimescaleUnits: null,
+        lastSample: null,
+        compactlyCodedChunkTable: []
+      });
+      if (__privateGet(this, _options).audio.codec === "aac") {
+        let guessedCodecPrivate = __privateMethod(this, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn).call(
+          this,
+          2,
+          // Object type for AAC-LC, since it's the most common
+          __privateGet(this, _options).audio.sampleRate,
+          __privateGet(this, _options).audio.numberOfChannels
+        );
+        __privateGet(this, _audioTrack).info.decoderConfig = {
+          codec: __privateGet(this, _options).audio.codec,
+          description: guessedCodecPrivate,
+          numberOfChannels: __privateGet(this, _options).audio.numberOfChannels,
+          sampleRate: __privateGet(this, _options).audio.sampleRate
+        };
+      }
+    }
+  };
+  _generateMpeg4AudioSpecificConfig = new WeakSet();
+  generateMpeg4AudioSpecificConfig_fn = function(objectType, sampleRate, numberOfChannels) {
+    let frequencyIndices = [96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350];
+    let frequencyIndex = frequencyIndices.indexOf(sampleRate);
+    let channelConfig = numberOfChannels;
+    let configBits = "";
+    configBits += objectType.toString(2).padStart(5, "0");
+    configBits += frequencyIndex.toString(2).padStart(4, "0");
+    if (frequencyIndex === 15)
+      configBits += sampleRate.toString(2).padStart(24, "0");
+    configBits += channelConfig.toString(2).padStart(4, "0");
+    let paddingLength = Math.ceil(configBits.length / 8) * 8;
+    configBits = configBits.padEnd(paddingLength, "0");
+    let configBytes = new Uint8Array(configBits.length / 8);
+    for (let i = 0; i < configBits.length; i += 8) {
+      configBytes[i / 8] = parseInt(configBits.slice(i, i + 8), 2);
+    }
+    return configBytes;
+  };
+  _createSampleForTrack = new WeakSet();
+  createSampleForTrack_fn = function(track, data, type, timestamp, duration, meta, compositionTimeOffset) {
+    let presentationTimestampInSeconds = timestamp / 1e6;
+    let decodeTimestampInSeconds = (timestamp - (compositionTimeOffset ?? 0)) / 1e6;
+    let durationInSeconds = duration / 1e6;
+    let adjusted = __privateMethod(this, _validateTimestamp, validateTimestamp_fn).call(this, presentationTimestampInSeconds, decodeTimestampInSeconds, track);
+    presentationTimestampInSeconds = adjusted.presentationTimestamp;
+    decodeTimestampInSeconds = adjusted.decodeTimestamp;
+    if (meta?.decoderConfig) {
+      if (track.info.decoderConfig === null) {
+        track.info.decoderConfig = meta.decoderConfig;
+      } else {
+        Object.assign(track.info.decoderConfig, meta.decoderConfig);
+      }
+    }
+    let sample = {
+      presentationTimestamp: presentationTimestampInSeconds,
+      decodeTimestamp: decodeTimestampInSeconds,
+      duration: durationInSeconds,
+      data,
+      size: data.byteLength,
+      type,
+      // Will be refined once the next sample comes in
+      timescaleUnitsToNextSample: intoTimescale(durationInSeconds, track.timescale)
+    };
+    return sample;
+  };
+  _addSampleToTrack = new WeakSet();
+  addSampleToTrack_fn = function(track, sample) {
+    if (__privateGet(this, _options).fastStart !== "fragmented") {
+      track.samples.push(sample);
+    }
+    const sampleCompositionTimeOffset = intoTimescale(sample.presentationTimestamp - sample.decodeTimestamp, track.timescale);
+    if (track.lastTimescaleUnits !== null) {
+      let timescaleUnits = intoTimescale(sample.decodeTimestamp, track.timescale, false);
+      let delta = Math.round(timescaleUnits - track.lastTimescaleUnits);
+      track.lastTimescaleUnits += delta;
+      track.lastSample.timescaleUnitsToNextSample = delta;
+      if (__privateGet(this, _options).fastStart !== "fragmented") {
+        let lastTableEntry = last(track.timeToSampleTable);
+        if (lastTableEntry.sampleCount === 1) {
+          lastTableEntry.sampleDelta = delta;
+          lastTableEntry.sampleCount++;
+        } else if (lastTableEntry.sampleDelta === delta) {
+          lastTableEntry.sampleCount++;
+        } else {
+          lastTableEntry.sampleCount--;
+          track.timeToSampleTable.push({
+            sampleCount: 2,
+            sampleDelta: delta
+          });
+        }
+        const lastCompositionTimeOffsetTableEntry = last(track.compositionTimeOffsetTable);
+        if (lastCompositionTimeOffsetTableEntry.sampleCompositionTimeOffset === sampleCompositionTimeOffset) {
+          lastCompositionTimeOffsetTableEntry.sampleCount++;
+        } else {
+          track.compositionTimeOffsetTable.push({
+            sampleCount: 1,
+            sampleCompositionTimeOffset
+          });
+        }
+      }
+    } else {
+      track.lastTimescaleUnits = 0;
+      if (__privateGet(this, _options).fastStart !== "fragmented") {
+        track.timeToSampleTable.push({
+          sampleCount: 1,
+          sampleDelta: intoTimescale(sample.duration, track.timescale)
+        });
+        track.compositionTimeOffsetTable.push({
+          sampleCount: 1,
+          sampleCompositionTimeOffset
+        });
+      }
+    }
+    track.lastSample = sample;
+    let beginNewChunk = false;
+    if (!track.currentChunk) {
+      beginNewChunk = true;
+    } else {
+      let currentChunkDuration = sample.presentationTimestamp - track.currentChunk.startTimestamp;
+      if (__privateGet(this, _options).fastStart === "fragmented") {
+        let mostImportantTrack = __privateGet(this, _videoTrack) ?? __privateGet(this, _audioTrack);
+        const chunkDuration = __privateGet(this, _options).minFragmentDuration ?? 1;
+        if (track === mostImportantTrack && sample.type === "key" && currentChunkDuration >= chunkDuration) {
+          beginNewChunk = true;
+          __privateMethod(this, _finalizeFragment, finalizeFragment_fn).call(this);
+        }
+      } else {
+        beginNewChunk = currentChunkDuration >= 0.5;
+      }
+    }
+    if (beginNewChunk) {
+      if (track.currentChunk) {
+        __privateMethod(this, _finalizeCurrentChunk, finalizeCurrentChunk_fn).call(this, track);
+      }
+      track.currentChunk = {
+        startTimestamp: sample.presentationTimestamp,
+        samples: []
+      };
+    }
+    track.currentChunk.samples.push(sample);
+  };
+  _validateTimestamp = new WeakSet();
+  validateTimestamp_fn = function(presentationTimestamp, decodeTimestamp, track) {
+    const strictTimestampBehavior = __privateGet(this, _options).firstTimestampBehavior === "strict";
+    const noLastDecodeTimestamp = track.lastDecodeTimestamp === -1;
+    const timestampNonZero = decodeTimestamp !== 0;
+    if (strictTimestampBehavior && noLastDecodeTimestamp && timestampNonZero) {
+      throw new Error(
+        `The first chunk for your media track must have a timestamp of 0 (received DTS=${decodeTimestamp}).Non-zero first timestamps are often caused by directly piping frames or audio data from a MediaStreamTrack into the encoder. Their timestamps are typically relative to the age of thedocument, which is probably what you want.
+
+If you want to offset all timestamps of a track such that the first one is zero, set firstTimestampBehavior: 'offset' in the options.
+`
+      );
+    } else if (__privateGet(this, _options).firstTimestampBehavior === "offset" || __privateGet(this, _options).firstTimestampBehavior === "cross-track-offset") {
+      if (track.firstDecodeTimestamp === void 0) {
+        track.firstDecodeTimestamp = decodeTimestamp;
+      }
+      let baseDecodeTimestamp;
+      if (__privateGet(this, _options).firstTimestampBehavior === "offset") {
+        baseDecodeTimestamp = track.firstDecodeTimestamp;
+      } else {
+        baseDecodeTimestamp = Math.min(
+          __privateGet(this, _videoTrack)?.firstDecodeTimestamp ?? Infinity,
+          __privateGet(this, _audioTrack)?.firstDecodeTimestamp ?? Infinity
+        );
+      }
+      decodeTimestamp -= baseDecodeTimestamp;
+      presentationTimestamp -= baseDecodeTimestamp;
+    }
+    if (decodeTimestamp < track.lastDecodeTimestamp) {
+      throw new Error(
+        `Timestamps must be monotonically increasing (DTS went from ${track.lastDecodeTimestamp * 1e6} to ${decodeTimestamp * 1e6}).`
+      );
+    }
+    track.lastDecodeTimestamp = decodeTimestamp;
+    return { presentationTimestamp, decodeTimestamp };
+  };
+  _finalizeCurrentChunk = new WeakSet();
+  finalizeCurrentChunk_fn = function(track) {
+    if (__privateGet(this, _options).fastStart === "fragmented") {
+      throw new Error("Can't finalize individual chunks if 'fastStart' is set to 'fragmented'.");
+    }
+    if (!track.currentChunk)
+      return;
+    track.finalizedChunks.push(track.currentChunk);
+    __privateGet(this, _finalizedChunks).push(track.currentChunk);
+    if (track.compactlyCodedChunkTable.length === 0 || last(track.compactlyCodedChunkTable).samplesPerChunk !== track.currentChunk.samples.length) {
+      track.compactlyCodedChunkTable.push({
+        firstChunk: track.finalizedChunks.length,
+        // 1-indexed
+        samplesPerChunk: track.currentChunk.samples.length
+      });
+    }
+    if (__privateGet(this, _options).fastStart === "in-memory") {
+      track.currentChunk.offset = 0;
+      return;
+    }
+    track.currentChunk.offset = __privateGet(this, _writer).pos;
+    for (let sample of track.currentChunk.samples) {
+      __privateGet(this, _writer).write(sample.data);
+      sample.data = null;
+    }
+    __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
+  };
+  _finalizeFragment = new WeakSet();
+  finalizeFragment_fn = function(flushStreamingWriter = true) {
+    if (__privateGet(this, _options).fastStart !== "fragmented") {
+      throw new Error("Can't finalize a fragment unless 'fastStart' is set to 'fragmented'.");
+    }
+    let tracks = [__privateGet(this, _videoTrack), __privateGet(this, _audioTrack)].filter((track) => track && track.currentChunk);
+    if (tracks.length === 0)
+      return;
+    let fragmentNumber = __privateWrapper(this, _nextFragmentNumber)._++;
+    if (fragmentNumber === 1) {
+      let movieBox = moov(tracks, __privateGet(this, _creationTime), true);
+      __privateGet(this, _writer).writeBox(movieBox);
+    }
+    let moofOffset = __privateGet(this, _writer).pos;
+    let moofBox = moof(fragmentNumber, tracks);
+    __privateGet(this, _writer).writeBox(moofBox);
+    {
+      let mdatBox = mdat(false);
+      let totalTrackSampleSize = 0;
+      for (let track of tracks) {
+        for (let sample of track.currentChunk.samples) {
+          totalTrackSampleSize += sample.size;
+        }
+      }
+      let mdatSize = __privateGet(this, _writer).measureBox(mdatBox) + totalTrackSampleSize;
+      if (mdatSize >= 2 ** 32) {
+        mdatBox.largeSize = true;
+        mdatSize = __privateGet(this, _writer).measureBox(mdatBox) + totalTrackSampleSize;
+      }
+      mdatBox.size = mdatSize;
+      __privateGet(this, _writer).writeBox(mdatBox);
+    }
+    for (let track of tracks) {
+      track.currentChunk.offset = __privateGet(this, _writer).pos;
+      track.currentChunk.moofOffset = moofOffset;
+      for (let sample of track.currentChunk.samples) {
+        __privateGet(this, _writer).write(sample.data);
+        sample.data = null;
+      }
+    }
+    let endPos = __privateGet(this, _writer).pos;
+    __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(moofBox));
+    let newMoofBox = moof(fragmentNumber, tracks);
+    __privateGet(this, _writer).writeBox(newMoofBox);
+    __privateGet(this, _writer).seek(endPos);
+    for (let track of tracks) {
+      track.finalizedChunks.push(track.currentChunk);
+      __privateGet(this, _finalizedChunks).push(track.currentChunk);
+      track.currentChunk = null;
+    }
+    if (flushStreamingWriter) {
+      __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
+    }
+  };
+  _maybeFlushStreamingTargetWriter = new WeakSet();
+  maybeFlushStreamingTargetWriter_fn = function() {
+    if (__privateGet(this, _writer) instanceof StreamTargetWriter) {
+      __privateGet(this, _writer).flush();
+    }
+  };
+  _ensureNotFinalized = new WeakSet();
+  ensureNotFinalized_fn = function() {
+    if (__privateGet(this, _finalized)) {
+      throw new Error("Cannot add new video or audio chunks after the file has been finalized.");
+    }
+  };
+  return __toCommonJS(src_exports);
+})();
+if (typeof module === "object" && typeof module.exports === "object") Object.assign(module.exports, Mp4Muxer)
+
+</script>
+
+<script>
+// ---------- Config ----------
+let SLIDE_W = 1080, SLIDE_H = 1350;
+let N_SLIDES = 4;
+let FULL_W = SLIDE_W * N_SLIDES, FULL_H = SLIDE_H;
+
+const baseCanvas = document.getElementById('baseCanvas');
+const overlay = document.getElementById('overlay');
+[baseCanvas, overlay].forEach(c=>{
+  c.width = FULL_W; c.height = FULL_H;
+});
+
+function applyResponsiveScale(){
+  const isMobileLayout = window.innerWidth <= 900;
+  let available;
+  if(isMobileLayout){
+    available = window.innerWidth - 24; // canvas area is full-width on mobile, small side padding
+    const availableH = window.innerHeight * 0.5; // leave room to scroll to controls below
+    baseScale = Math.min(1, available / FULL_W, availableH / FULL_H);
+  } else {
+    const sidebarWidth = document.getElementById('sidebar').offsetWidth;
+    available = window.innerWidth - sidebarWidth - 60; // side padding
+    baseScale = Math.min(1, available / FULL_W);
+  }
+  updateCanvasDisplaySize();
+}
+let baseScale = 1;
+let zoomFactor = 1;
+const ZOOM_MIN = 0.3, ZOOM_MAX = 4;
+
+function updateCanvasDisplaySize(){
+  const scale = baseScale * zoomFactor;
+  [baseCanvas, overlay].forEach(c=>{
+    c.style.width = (FULL_W*scale)+'px';
+    c.style.height = (FULL_H*scale)+'px';
+  });
+  document.getElementById('zoomLabel').textContent = Math.round(zoomFactor*100)+'%';
+}
+applyResponsiveScale();
+window.addEventListener('resize', applyResponsiveScale);
+
+document.getElementById('zoomIn').addEventListener('click', ()=>{
+  zoomFactor = Math.min(ZOOM_MAX, zoomFactor * 1.25);
+  updateCanvasDisplaySize();
+});
+document.getElementById('zoomOut').addEventListener('click', ()=>{
+  zoomFactor = Math.max(ZOOM_MIN, zoomFactor / 1.25);
+  updateCanvasDisplaySize();
+});
+document.getElementById('zoomReset').addEventListener('click', ()=>{
+  zoomFactor = 1;
+  updateCanvasDisplaySize();
+});
+document.getElementById('canvasWrap').addEventListener('wheel', (e)=>{
+  if(!(e.ctrlKey || e.metaKey)) return;
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 1.1 : (1/1.1);
+  zoomFactor = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomFactor * delta));
+  updateCanvasDisplaySize();
+}, {passive:false});
+const bctx = baseCanvas.getContext('2d');
+const octx = overlay.getContext('2d');
+
+let lines = [];      // {id, color, finished, points:[{x,y}]}
+let icons = [];       // {id, img, x, y, w, h}
+let activeLineId = null;
+let draggingPoint = null;   // {lineId, index}
+let draggingIcon = null;    // {id, offX, offY}
+let resizingIcon = null;    // {id, startW, startH, startPosX, aspect}
+let selectedPoint = null;   // {lineId, index}
+let selectedIconId = null;
+let activeSnapGuides = null; // {x: canvasXOrNull, y: canvasYOrNull} while dragging an icon
+const SNAP_THRESHOLD_SCREEN_PX = 8;
+let pickingColorForLineId = null; // fallback eyedropper mode
+let bgColor = '#F5D5DE';
+let strokeWidth = 7;
+let lineCounter = 0;
+let iconCounter = 0;
+
+// ---------- Wave / text-on-path state ----------
+let waveText = '';
+let waveRepeat = true;
+let waveFontFamily = "Georgia, 'Iowan Old Style', serif";
+let waveFontSize = 64;
+let waveBold = true;
+let waveTextColor = '#ffffff';
+let waveLetterSpacing = 2;
+let shapeType = 'none';
+let shapeSize = 48;
+let shapeColor = '#ffffff';
+// Shapes spliced directly into the path's geometry (a heart/loop the
+// line itself traces), as opposed to shapeType above which is just a
+// small stamp drawn between text repeats.
+let pathShapes = [];
+let shapeCounter = 0;
+let selectedShapeId = null;
+let waveAmplitude = 90;
+let waveWavelength = 850;
+let wavePhase = 0; // degrees
+let waveBaselinePct = 45; // % of height
+let waveVisible = false;
+let waveColor = '#ffffff';
+let waveThickness = 6;
+
+// ---------- Animation state ----------
+let animIconId = '';
+let animDuration = 5.0;
+let animDelay = 0.0;
+let animHold = 1.0;
+let animEasing = 'linear';
+let animRotate = false;
+let previewT = 0;
+let previewPlaying = false;
+let previewStartPerf = null;
+let previewStartT = 0;
+
+// Horizontal drag offset for the text along the path (px of arc-length).
+// Declared here (near the top) on purpose: draw() reads it, and draw()
+// gets invoked very early (from the first slider's initial sync), so
+// this must exist before any of that code runs.
+let waveOffsetX = 0;
+let draggingWave = null; // {startPosX, startPosY, startOffset, startBaselinePct}
+let lastAnimPos = null;
+
+// Draw order for everything on the canvas (manual lines, the wave
+// stroke, the wave text, every icon). Index 0 = back, last = front.
+let layers = [
+  {type:'waveline', visible:true},
+  {type:'wavetext', visible:true}
+];
+
+const EASINGS = {
+  linear: u => u,
+  easeInOut: u => u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u+2, 2)/2
+};
+
+// ---------- Undo history (lines & icons & background/stroke only) ----------
+let history = [];
+const HISTORY_LIMIT = 80;
+
+function snapshotState(){
+  return {
+    lines: lines.map(l=>({id:l.id, color:l.color, finished:!!l.finished, points: l.points.map(p=>({x:p.x,y:p.y}))})),
+    icons: icons.map(i=>({id:i.id, img:i.img, x:i.x, y:i.y, w:i.w, h:i.h})),
+    layers: layers.map(l=>({type:l.type, id:l.id, visible:l.visible})),
+    activeLineId, bgColor, strokeWidth, lineCounter, iconCounter, animIconId
+  };
+}
+function pushHistory(){
+  history.push(snapshotState());
+  if(history.length > HISTORY_LIMIT) history.shift();
+}
+function undo(){
+  if(!history.length) return;
+  const snap = history.pop();
+  lines = snap.lines.map(l=>({id:l.id, color:l.color, finished:l.finished, points:l.points.map(p=>({x:p.x,y:p.y}))}));
+  icons = snap.icons.map(i=>({id:i.id, img:i.img, x:i.x, y:i.y, w:i.w, h:i.h}));
+  layers = snap.layers ? snap.layers.map(l=>({type:l.type, id:l.id, visible:l.visible})) : layers;
+  activeLineId = snap.activeLineId;
+  bgColor = snap.bgColor;
+  strokeWidth = snap.strokeWidth;
+  lineCounter = snap.lineCounter;
+  iconCounter = snap.iconCounter;
+  animIconId = snap.animIconId || '';
+  document.getElementById('bgColor').value = bgColor;
+  document.getElementById('strokeWidth').value = strokeWidth;
+  selectedPoint = null;
+  selectedIconId = null;
+  renderLineList();
+  renderIconList();
+  renderLayerList();
+  syncSelectedIconSizeUI();
+  updateModeBanner();
+  draw();
+}
+
+const palette = ['#C0392B','#D98A3D','#8B5E34','#3E7A5C','#5B7BA8','#9B5C8F'];
+
+function newLineColor(){
+  return palette[lines.length % palette.length];
+}
+
+// ---------- Line list UI ----------
+function renderLineList(){
+  const el = document.getElementById('lineList');
+  el.innerHTML = '';
+  lines.forEach(line=>{
+    const row = document.createElement('div');
+    row.className = 'line-item' + (line.id===activeLineId ? ' active':'');
+    row.innerHTML = `
+      <span class="swatch" style="background:${line.color}"></span>
+      <span>Lijn ${lines.indexOf(line)+1} (${line.points.length} pt)${line.finished ? ' ✓' : ''}</span>
+      <input type="color" value="${line.color}" data-id="${line.id}" class="colorPick">
+      <button class="eyedrop${pickingColorForLineId===line.id ? ' picking':''}" data-id="${line.id}" title="Kies kleur uit afbeelding">💧</button>
+      <button class="del" data-id="${line.id}">✕</button>
+    `;
+    row.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('colorPick') || e.target.classList.contains('del')) return;
+      activeLineId = line.id;
+      line.finished = false;
+      renderLineList();
+      renderLayerList();
+      updateModeBanner();
+      draw();
+    });
+    el.appendChild(row);
+  });
+  el.querySelectorAll('.colorPick').forEach(inp=>{
+    inp.addEventListener('mousedown', ()=> pushHistory());
+    inp.addEventListener('input', (e)=>{
+      const l = lines.find(l=>l.id==e.target.dataset.id);
+      l.color = e.target.value;
+      draw();
+    });
+  });
+  el.querySelectorAll('.eyedrop').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const lineId = btn.dataset.id;
+      const line = lines.find(l=>l.id==lineId);
+      if(!line) return;
+      if(window.EyeDropper){
+        const ed = new EyeDropper();
+        ed.open().then(result=>{
+          pushHistory();
+          line.color = result.sRGBHex;
+          renderLineList();
+          draw();
+        }).catch(()=>{});
+      } else {
+        pickingColorForLineId = line.id;
+        renderLineList();
+        updateModeBanner();
+      }
+    });
+  });
+  el.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pushHistory();
+      lines = lines.filter(l=>l.id!=btn.dataset.id);
+      removeLayerFor('line', btn.dataset.id);
+      if(activeLineId==btn.dataset.id) activeLineId = lines.length? lines[0].id : null;
+      renderLineList();
+      renderLayerList();
+      draw();
+    });
+  });
+}
+
+document.getElementById('addLine').addEventListener('click', ()=>{
+  pushHistory();
+  lineCounter++;
+  const line = {id: lineCounter, color: newLineColor(), finished:false, points: []};
+  lines.push(line);
+  addLayerFor('line', line.id);
+  activeLineId = line.id;
+  renderLineList();
+  renderLayerList();
+  updateModeBanner();
+  draw();
+});
+
+function updateModeBanner(){
+  const banner = document.getElementById('modeBanner');
+  if(pickingColorForLineId){
+    banner.innerHTML = `Klik ergens op het canvas (bijv. op een afbeelding) om die kleur over te nemen. <b>Esc</b> om te annuleren.`;
+    return;
+  }
+  if(activeLineId){
+    const idx = lines.findIndex(l=>l.id===activeLineId)+1;
+    banner.innerHTML = `Actief: <b>Lijn ${idx}</b> — klik op het canvas om een punt toe te voegen. Druk op <b>Enter</b> als je klaar bent.`;
+    overlay.style.cursor = 'crosshair';
+  } else {
+    banner.textContent = 'Sleep op het canvas om de tekst te verplaatsen. Losse handmatige lijnen (optioneel) maak je met "+ Nieuwe lijn".';
+    overlay.style.cursor = 'grab';
+  }
+}
+
+// ---------- Icon list UI ----------
+document.getElementById('addIcon').addEventListener('click', ()=>{
+  document.getElementById('fileInput').click();
+});
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      pushHistory();
+      iconCounter++;
+      // Fit the image large within a single slide (not a tiny corner
+      // thumbnail) so it's immediately usable — cap by both width and
+      // height so tall/wide images both fit inside one slide's bounds.
+      const maxW = SLIDE_W * 0.85, maxH = SLIDE_H * 0.85;
+      const aspect = img.width / img.height;
+      let w = maxW, h = w / aspect;
+      if(h > maxH){ h = maxH; w = h * aspect; }
+      // Cascade each new image slightly so multiple images don't land
+      // perfectly on top of one another (which made the lower one
+      // impossible to reach by clicking on the canvas).
+      const cascade = (icons.length % 6) * 36;
+      const x = (SLIDE_W - w) / 2 + cascade;
+      const y = (SLIDE_H - h) / 2 + cascade;
+      icons.push({id: iconCounter, img, x, y, w, h});
+      addLayerFor('icon', iconCounter);
+      renderIconList();
+      renderLayerList();
+      draw();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+function renderIconList(){
+  const el = document.getElementById('iconList');
+  el.innerHTML = '';
+  icons.forEach(icon=>{
+    const row = document.createElement('div');
+    const isAnim = String(icon.id)===String(animIconId);
+    row.className = 'icon-item' + (isAnim ? ' is-anim' : '');
+    row.innerHTML = `<img src="${icon.img.src}"><span>Afbeelding ${icons.indexOf(icon)+1}</span>${isAnim ? '<span class="anim-tag">animeert</span>' : ''}<button class="del" data-id="${icon.id}">✕</button>`;
+    el.appendChild(row);
+  });
+  el.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      pushHistory();
+      const id = btn.dataset.id;
+      icons = icons.filter(i=>i.id!=id);
+      removeLayerFor('icon', id);
+      if(String(animIconId)===String(id)) animIconId = '';
+      if(String(selectedIconId)===String(id)) selectedIconId = null;
+      renderIconList();
+      renderLayerList();
+      refreshAnimIconSelect();
+      syncSelectedIconSizeUI();
+      draw();
+    });
+  });
+  refreshAnimIconSelect();
+}
+
+function refreshAnimIconSelect(){
+  const sel = document.getElementById('animIconSelect');
+  const prev = animIconId;
+  sel.innerHTML = '<option value="">— geen —</option>';
+  icons.forEach((icon, idx)=>{
+    const opt = document.createElement('option');
+    opt.value = icon.id;
+    opt.textContent = 'Afbeelding ' + (idx+1);
+    sel.appendChild(opt);
+  });
+  if(icons.find(i=>String(i.id)===String(prev))){
+    sel.value = prev;
+    animIconId = prev;
+  } else {
+    sel.value = '';
+    animIconId = '';
+  }
+  syncAnimIconSizeUI();
+}
+document.getElementById('animIconSelect').addEventListener('change', (e)=>{
+  animIconId = e.target.value;
+  renderIconList();
+  renderLayerList();
+  syncAnimIconSizeUI();
+  syncSelectedIconSizeUI();
+  draw();
+});
+
+function syncAnimIconSizeUI(){
+  const icon = getAnimIcon();
+  const el = document.getElementById('animIconSize');
+  const val = document.getElementById('animIconSizeVal');
+  if(icon){
+    el.disabled = false;
+    el.value = Math.round(icon.w);
+    val.textContent = Math.round(icon.w)+'px';
+  } else {
+    el.disabled = true;
+  }
+}
+document.getElementById('animIconSize').addEventListener('input', (e)=>{
+  const icon = getAnimIcon();
+  if(!icon) return;
+  const newW = parseFloat(e.target.value);
+  const aspect = icon.w / icon.h;
+  icon.w = newW;
+  icon.h = newW / aspect;
+  document.getElementById('animIconSizeVal').textContent = Math.round(newW)+'px';
+  if(String(icon.id)===String(selectedIconId)) syncSelectedIconSizeUI();
+  draw();
+});
+
+// ---------- Selected-icon size control (works for ANY icon you click,
+// not just the one that's animating) ----------
+function syncSelectedIconSizeUI(){
+  const panel = document.getElementById('selectedIconSizePanel');
+  if(!panel) return;
+  const icon = icons.find(i=>String(i.id)===String(selectedIconId));
+  if(!icon){
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  document.getElementById('selectedIconSize').value = Math.round(icon.w);
+  document.getElementById('selectedIconSizeVal').textContent = Math.round(icon.w)+'px';
+}
+document.getElementById('selectedIconSize').addEventListener('input', (e)=>{
+  const icon = icons.find(i=>String(i.id)===String(selectedIconId));
+  if(!icon) return;
+  const newW = parseFloat(e.target.value);
+  const aspect = icon.w / icon.h;
+  icon.w = newW;
+  icon.h = newW / aspect;
+  document.getElementById('selectedIconSizeVal').textContent = Math.round(newW)+'px';
+  if(String(icon.id)===String(animIconId)) syncAnimIconSizeUI();
+  draw();
+});
+
+document.getElementById('bgColor').addEventListener('mousedown', ()=> pushHistory());
+document.getElementById('bgColor').addEventListener('input', (e)=>{
+  bgColor = e.target.value;
+  draw();
+});
+document.getElementById('strokeWidth').addEventListener('mousedown', ()=> pushHistory());
+document.getElementById('strokeWidth').addEventListener('input', (e)=>{
+  strokeWidth = parseInt(e.target.value);
+  draw();
+});
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!confirm('Alles wissen? (tekst en golfinstellingen blijven staan, alleen lijnen/afbeeldingen worden gewist)')) return;
+  pushHistory();
+  lines = []; icons = []; activeLineId = null; animIconId=''; selectedIconId = null;
+  layers = layers.filter(l=> l.type==='waveline' || l.type==='wavetext');
+  renderLineList(); renderIconList(); renderLayerList(); syncSelectedIconSizeUI(); updateModeBanner(); draw();
+});
+
+// ---------- Wave / text-on-path controls wiring ----------
+function bindRange(id, valId, fmt, onChange){
+  const el = document.getElementById(id);
+  const valEl = valId ? document.getElementById(valId) : null;
+  const update = ()=>{
+    const v = el.type==='range' ? parseFloat(el.value) : el.value;
+    if(valEl) valEl.textContent = fmt(v);
+    onChange(v);
+    draw();
+  };
+  el.addEventListener('input', update);
+  update();
+}
+
+document.getElementById('waveText').addEventListener('input', (e)=>{ waveText = e.target.value; draw(); });
+document.getElementById('waveRepeat').addEventListener('change', (e)=>{ waveRepeat = e.target.checked; draw(); });
+document.getElementById('waveFontFamily').addEventListener('change', (e)=>{ waveFontFamily = e.target.value; draw(); });
+document.getElementById('waveTextColor').addEventListener('input', (e)=>{ waveTextColor = e.target.value; draw(); });
+document.getElementById('waveBold').addEventListener('change', (e)=>{ waveBold = e.target.checked; draw(); });
+document.getElementById('waveColor').addEventListener('input', (e)=>{ waveColor = e.target.value; draw(); });
+
+bindRange('waveFontSize','waveFontSizeVal', v=>v+'px', v=> waveFontSize=v);
+bindRange('waveLetterSpacing','waveLetterSpacingVal', v=>v+'px', v=> waveLetterSpacing=v);
+bindRange('waveAmplitude','waveAmplitudeVal', v=>v+'px', v=> waveAmplitude=v);
+bindRange('waveWavelength','waveWavelengthVal', v=>v+'px', v=> waveWavelength=v);
+bindRange('wavePhase','wavePhaseVal', v=>v+'°', v=> wavePhase=v);
+bindRange('waveBaseline','waveBaselineVal', v=>v+'%', v=> waveBaselinePct=v);
+bindRange('waveOffsetX','waveOffsetXVal', v=>Math.round(v)+'px', v=> waveOffsetX=v);
+bindRange('waveThickness', null, v=>v, v=> waveThickness=v);
+
+document.getElementById('resetWavePosBtn').addEventListener('click', ()=>{
+  waveOffsetX = 0;
+  waveBaselinePct = 45;
+  document.getElementById('waveBaseline').value = 45;
+  document.getElementById('waveBaselineVal').textContent = '45%';
+  document.getElementById('waveOffsetX').value = 0;
+  document.getElementById('waveOffsetXVal').textContent = '0px';
+  draw();
+});
+
+document.getElementById('waveVisible').addEventListener('change', (e)=>{
+  waveVisible = e.target.checked;
+  document.getElementById('waveStrokeFields').style.display = waveVisible ? '' : 'none';
+  draw();
+});
+
+document.getElementById('shapeType').addEventListener('change', (e)=>{
+  shapeType = e.target.value;
+  draw();
+});
+document.getElementById('shapeColor').addEventListener('input', (e)=>{
+  shapeColor = e.target.value;
+  draw();
+});
+bindRange('shapeSize','shapeSizeVal', v=>Math.round(v)+'px', v=> shapeSize=v);
+
+// ---------- Shapes spliced into the line's own geometry ----------
+function renderPathShapeList(){
+  const el = document.getElementById('pathShapeList');
+  el.innerHTML = '';
+  const labels = {heart:'Hartje', circle:'Cirkel', loop:'Lus', star:'Ster'};
+  pathShapes.forEach(shape=>{
+    const row = document.createElement('div');
+    row.className = 'line-item' + (shape.id===selectedShapeId ? ' active' : '');
+    row.innerHTML = `<span>${labels[shape.type]||shape.type}</span><button class="del">✕</button>`;
+    row.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('del')) return;
+      selectedShapeId = shape.id;
+      renderPathShapeList();
+      syncSelectedPathShapeUI();
+      draw();
+    });
+    row.querySelector('.del').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pathShapes = pathShapes.filter(s=>s.id!==shape.id);
+      if(selectedShapeId===shape.id) selectedShapeId = null;
+      renderPathShapeList();
+      syncSelectedPathShapeUI();
+      draw();
+    });
+    el.appendChild(row);
+  });
+  if(!pathShapes.length){
+    el.innerHTML = '<div class="hint" style="margin:0;">Nog geen vormen toegevoegd.</div>';
+  }
+}
+function syncSelectedPathShapeUI(){
+  const panel = document.getElementById('selectedPathShapePanel');
+  const shape = pathShapes.find(s=>s.id===selectedShapeId);
+  if(!shape){ panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  const pct = Math.round((shape.insertX/FULL_W)*100);
+  document.getElementById('pathShapePos').value = pct;
+  document.getElementById('pathShapePosVal').textContent = pct+'%';
+  document.getElementById('pathShapeSize').value = shape.size;
+  document.getElementById('pathShapeSizeVal').textContent = Math.round(shape.size)+'px';
+}
+document.getElementById('addPathShapeBtn').addEventListener('click', ()=>{
+  pushHistory();
+  shapeCounter++;
+  const type = document.getElementById('newPathShapeType').value;
+  const shape = {id: shapeCounter, type, insertX: FULL_W*0.5, size: 180};
+  pathShapes.push(shape);
+  selectedShapeId = shape.id;
+  renderPathShapeList();
+  syncSelectedPathShapeUI();
+  draw();
+});
+document.getElementById('pathShapePos').addEventListener('input', (e)=>{
+  const shape = pathShapes.find(s=>s.id===selectedShapeId);
+  if(!shape) return;
+  const pct = parseFloat(e.target.value);
+  shape.insertX = FULL_W * (pct/100);
+  document.getElementById('pathShapePosVal').textContent = Math.round(pct)+'%';
+  draw();
+});
+document.getElementById('pathShapeSize').addEventListener('input', (e)=>{
+  const shape = pathShapes.find(s=>s.id===selectedShapeId);
+  if(!shape) return;
+  shape.size = parseFloat(e.target.value);
+  document.getElementById('pathShapeSizeVal').textContent = Math.round(shape.size)+'px';
+  draw();
+});
+renderPathShapeList();
+
+document.querySelectorAll('.preset-btn[data-amp]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    waveAmplitude = parseFloat(btn.dataset.amp);
+    waveWavelength = parseFloat(btn.dataset.wl);
+    document.getElementById('waveAmplitude').value = waveAmplitude;
+    document.getElementById('waveAmplitudeVal').textContent = waveAmplitude+'px';
+    document.getElementById('waveWavelength').value = waveWavelength;
+    document.getElementById('waveWavelengthVal').textContent = waveWavelength+'px';
+    draw();
+  });
+});
+
+// ---------- Format switching ----------
+// Rescales every position/size (icons, lines, wave text/shape, stroke
+// widths) to fit the new slide dimensions, so switching format works
+// just as well on a finished project as on a blank one.
+function changeFormat(newSlideW, newSlideH){
+  if(newSlideW===SLIDE_W && newSlideH===SLIDE_H) return;
+  pushHistory();
+  const scaleX = newSlideW / SLIDE_W;
+  const scaleY = newSlideH / SLIDE_H;
+  const scaleAvg = (scaleX + scaleY) / 2;
+
+  icons.forEach(icon=>{
+    icon.x *= scaleX; icon.y *= scaleY; icon.w *= scaleX; icon.h *= scaleY;
+  });
+  lines.forEach(line=>{
+    line.points.forEach(p=>{ p.x *= scaleX; p.y *= scaleY; });
+  });
+  waveAmplitude *= scaleY;
+  waveWavelength *= scaleX;
+  waveOffsetX *= scaleX;
+  waveFontSize = Math.round(waveFontSize * scaleY);
+  waveLetterSpacing *= scaleX;
+  waveThickness *= scaleAvg;
+  shapeSize = Math.round(shapeSize * scaleAvg);
+  pathShapes.forEach(s=>{ s.insertX *= scaleX; s.size *= scaleAvg; });
+  strokeWidth *= scaleAvg;
+
+  SLIDE_W = newSlideW; SLIDE_H = newSlideH;
+  FULL_W = SLIDE_W * N_SLIDES; FULL_H = SLIDE_H;
+  [baseCanvas, overlay].forEach(c=>{ c.width = FULL_W; c.height = FULL_H; });
+  previewCanvas.width = SLIDE_W; previewCanvas.height = SLIDE_H;
+
+  applyAllUIFromState();
+  applyResponsiveScale();
+  renderFormatButtons();
+  syncSelectedPathShapeUI();
+  draw();
+}
+
+function renderFormatButtons(){
+  document.querySelectorAll('.format-btn').forEach(btn=>{
+    const isActive = parseInt(btn.dataset.w)===SLIDE_W && parseInt(btn.dataset.h)===SLIDE_H;
+    btn.style.borderColor = isActive ? 'var(--accent)' : '';
+    btn.style.color = isActive ? 'var(--accent)' : '';
+  });
+}
+document.querySelectorAll('.format-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    changeFormat(parseInt(btn.dataset.w), parseInt(btn.dataset.h));
+  });
+});
+renderFormatButtons();
+
+// ---------- Slide count ----------
+// Just extends/shrinks the total canvas width by whole slide-widths —
+// existing content keeps its absolute position (no rescaling needed,
+// unlike changing the format's width/height).
+function changeSlideCount(newCount){
+  newCount = Math.max(1, Math.min(10, Math.round(newCount)));
+  if(newCount === N_SLIDES) return;
+  N_SLIDES = newCount;
+  FULL_W = SLIDE_W * N_SLIDES;
+  [baseCanvas, overlay].forEach(c=>{ c.width = FULL_W; c.height = FULL_H; });
+  document.getElementById('slideCount').value = N_SLIDES;
+  document.getElementById('slideCountVal').textContent = N_SLIDES;
+  applyResponsiveScale();
+  draw();
+}
+document.getElementById('slideCount').addEventListener('input', (e)=>{
+  changeSlideCount(parseInt(e.target.value));
+});
+
+// ---------- Animation controls wiring ----------
+bindRange('animDuration','animDurationVal', v=>v.toFixed(1)+'s', v=> animDuration=v);
+bindRange('animDelay','animDelayVal', v=>v.toFixed(1)+'s', v=> animDelay=v);
+bindRange('animHold','animHoldVal', v=>v.toFixed(1)+'s', v=> animHold=v);
+document.getElementById('animEasing').addEventListener('change', (e)=>{ animEasing = e.target.value; draw(); });
+document.getElementById('animRotate').addEventListener('change', (e)=>{ animRotate = e.target.checked; draw(); });
+
+document.getElementById('scrub').addEventListener('input', (e)=>{
+  previewPlaying = false;
+  updatePlayButton();
+  const tEnd = animDelay+animDuration+animHold;
+  previewT = (parseFloat(e.target.value)/1000) * tEnd;
+  draw();
+});
+
+function updatePlayButton(){
+  document.getElementById('playBtn').textContent = previewPlaying ? '❚❚' : '▶';
+}
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  const tEnd = animDelay+animDuration+animHold;
+  if(!previewPlaying && previewT >= tEnd - 0.001){ previewT = 0; }
+  previewPlaying = !previewPlaying;
+  if(previewPlaying){
+    previewStartPerf = performance.now();
+    previewStartT = previewT;
+    requestAnimationFrame(previewLoop);
+  }
+  updatePlayButton();
+});
+function previewLoop(now){
+  if(!previewPlaying) return;
+  const tEnd = animDelay+animDuration+animHold;
+  const elapsed = (now - previewStartPerf)/1000;
+  previewT = previewStartT + elapsed;
+  if(previewT >= tEnd){
+    previewT = tEnd;
+    previewPlaying = false;
+    updatePlayButton();
+  }
+  document.getElementById('scrub').value = Math.round((previewT/tEnd)*1000);
+  draw();
+  if(previewPlaying) requestAnimationFrame(previewLoop);
+}
+
+// ---------- Smooth line (rounded corners at every point) ----------
+function drawSmoothLine(ctx, pts, color, width){
+  if(pts.length < 2) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  if(pts.length === 2){
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.stroke();
+    return;
+  }
+  for(let i=1; i<pts.length-1; i++){
+    const midX = (pts[i].x + pts[i+1].x) / 2;
+    const midY = (pts[i].y + pts[i+1].y) / 2;
+    ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+  }
+  const last = pts[pts.length-1];
+  const secondLast = pts[pts.length-2];
+  ctx.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
+  ctx.stroke();
+}
+
+// ---------- Wave path (parametric, arc-length sampled) ----------
+// Returns the outline of a shape as points local to its own center
+// (x=0,y=0 is the shape's attachment point — where the line enters
+// and, since these are closed loops, also exits). Sized so the shape
+// is roughly `size` px across.
+function shapeOutlinePoints(type, size){
+  const pts = [];
+  const N = 100;
+  if(type === 'heart'){
+    // Classic parametric heart curve — a closed loop starting and
+    // ending at the same point (t=0 and t=2π coincide), which is
+    // exactly what lets it splice into a path without a gap.
+    for(let i=0;i<=N;i++){
+      const t = (i/N) * Math.PI*2;
+      const hx = 16*Math.pow(Math.sin(t),3);
+      const hy = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+      pts.push({x: hx, y: -hy});
+    }
+    const scale = size/34;
+    // shift so the loop's bottom point (the heart's cusp) is the
+    // attachment point at (0,0), matching the reference: line dips
+    // down, loops through the heart, continues from the same spot.
+    const bottom = pts.reduce((m,p)=> p.y>m ? p.y : m, -Infinity);
+    return pts.map(p=>({x: p.x*scale, y: (p.y-bottom)*scale}));
+  }
+  if(type === 'circle'){
+    for(let i=0;i<=N;i++){
+      const t = (i/N) * Math.PI*2;
+      pts.push({x: Math.sin(t)*size/2, y: (1-Math.cos(t))*size/2});
+    }
+    return pts;
+  }
+  if(type === 'star'){
+    const spikes = 5, outerR = size/2, innerR = size*0.2;
+    const total = spikes*2;
+    for(let i=0;i<=total;i++){
+      const idx = i % total;
+      const r = idx%2===0 ? outerR : innerR;
+      const angle = (Math.PI/spikes)*idx - Math.PI/2;
+      pts.push({x: Math.cos(angle)*r, y: Math.sin(angle)*r + outerR});
+    }
+    return pts;
+  }
+  if(type === 'loop'){
+    for(let i=0;i<=N;i++){
+      const t = (i/N) * Math.PI*2;
+      pts.push({x: Math.sin(t)*size/2, y: -Math.cos(t)*size/2 + size/2});
+    }
+    return pts;
+  }
+  return pts;
+}
+
+function buildWavePath(){
+  const dx = 4;
+  const N = Math.floor(FULL_W/dx);
+  const amp = waveAmplitude;
+  const wl = Math.max(50, waveWavelength);
+  const phaseRad = wavePhase * Math.PI/180;
+  const baselineY = (waveBaselinePct/100) * FULL_H;
+  // Compute the wave's shape in "local" coordinates first (the sine's
+  // input is never touched by waveOffsetX), then shift the whole
+  // resulting shape sideways by waveOffsetX. That makes dragging a
+  // true rigid-body translation — the shape itself never distorts,
+  // and (since text/icon always start at the shape's own s=0) it
+  // actually carries the text along instead of leaving it pinned at
+  // the canvas edge.
+  let xs = [], ys = [];
+  for(let i=0;i<=N;i++){
+    const localX = i*dx;
+    const y = baselineY + amp*Math.sin((2*Math.PI*localX/wl) + phaseRad);
+    xs.push(localX);
+    ys.push(y);
+  }
+
+  // Splice in each inserted shape: at its position, detour off into
+  // the shape's outline and back — everything that already draws
+  // along the path (text, stroke, the animating icon) automatically
+  // traces through it, no separate rendering needed.
+  pathShapes.slice().sort((a,b)=>a.insertX-b.insertX).forEach(shape=>{
+    const outline = shapeOutlinePoints(shape.type, shape.size);
+    if(!outline.length) return;
+    let idx = Math.max(0, Math.min(xs.length-1, Math.round(shape.insertX/dx)));
+    const attachX = xs[idx], attachY = ys[idx];
+    const insertXs = outline.map(p=> attachX + p.x);
+    const insertYs = outline.map(p=> attachY + p.y);
+    xs.splice(idx+1, 0, ...insertXs);
+    ys.splice(idx+1, 0, ...insertYs);
+  });
+
+  const ss = [0];
+  for(let i=1;i<xs.length;i++){
+    ss.push(ss[i-1] + Math.hypot(xs[i]-xs[i-1], ys[i]-ys[i-1]));
+  }
+  const xsShifted = xs.map(x=> x + waveOffsetX);
+
+  return {xs: xsShifted, ys, ss, totalLength: ss[ss.length-1], dx, N: xs.length-1, offsetX: waveOffsetX};
+}
+
+function posAtArcLength(path, s){
+  s = Math.max(0, Math.min(path.totalLength, s));
+  const ss = path.ss;
+  let lo = 0, hi = ss.length-1;
+  while(lo < hi-1){
+    const mid = (lo+hi)>>1;
+    if(ss[mid] <= s) lo = mid; else hi = mid;
+  }
+  const s0=ss[lo], s1=ss[hi];
+  const t = s1>s0 ? (s-s0)/(s1-s0) : 0;
+  const x = path.xs[lo] + (path.xs[hi]-path.xs[lo])*t;
+  const y = path.ys[lo] + (path.ys[hi]-path.ys[lo])*t;
+  const angle = Math.atan2(path.ys[hi]-path.ys[lo], path.xs[hi]-path.xs[lo]);
+  return {x, y, angle};
+}
+
+function arcLengthAtX(path, x){
+  // Inserted shapes can make the path loop back in x, so this can no
+  // longer assume xs[i] increases in lockstep with i — scan for the
+  // first left-to-right crossing instead (that's also the semantically
+  // right answer for "when does the icon first reach this slide edge").
+  const xs = path.xs;
+  for(let i=1;i<xs.length;i++){
+    const a = xs[i-1], b = xs[i];
+    if((a<=x && b>=x) || (a>=x && b<=x)){
+      const t = b===a ? 0 : (x-a)/(b-a);
+      return path.ss[i-1] + (path.ss[i]-path.ss[i-1])*t;
+    }
+  }
+  return x <= xs[0] ? 0 : path.totalLength;
+}
+
+// Like posAtArcLength, but extrapolates in a straight line past the
+// path's two ends instead of clamping — so dragged text can start
+// before x=0 or continue past the right edge and still curve/move
+// correctly as it re-enters the visible path.
+function posAtArcLengthExt(path, s){
+  if(s < 0){
+    const p0 = posAtArcLength(path, 0);
+    const p1 = posAtArcLength(path, Math.min(20, path.totalLength));
+    const dxp = p1.x-p0.x, dyp = p1.y-p0.y, len = Math.hypot(dxp,dyp)||1;
+    const ux = dxp/len, uy = dyp/len;
+    return {x: p0.x + ux*s, y: p0.y + uy*s, angle: Math.atan2(dyp,dxp)};
+  }
+  if(s > path.totalLength){
+    const pN = posAtArcLength(path, path.totalLength);
+    const pNm = posAtArcLength(path, Math.max(0, path.totalLength-20));
+    const dxp = pN.x-pNm.x, dyp = pN.y-pNm.y, len = Math.hypot(dxp,dyp)||1;
+    const ux = dxp/len, uy = dyp/len;
+    const over = s - path.totalLength;
+    return {x: pN.x + ux*over, y: pN.y + uy*over, angle: Math.atan2(dyp,dxp)};
+  }
+  return posAtArcLength(path, s);
+}
+
+function buildFontCss(){
+  return (waveBold ? 'bold ' : '') + waveFontSize + 'px ' + waveFontFamily;
+}
+
+function drawTextOnPath(ctx, path, opts){
+  const {text, fontCss, color, letterSpacing, repeat, startS, shapeType, shapeSize, shapeColor} = opts;
+  if(!text) return;
+  ctx.save();
+  ctx.font = fontCss;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  let s = startS || 0;
+  const rightLimit = path.totalLength + 400;
+  const hasShape = repeat && shapeType && shapeType !== 'none';
+  let guard = 0;
+
+  while(guard < 8000){
+    // one full pass of the text
+    for(let i=0; i<text.length && guard<8000; i++){
+      guard++;
+      const ch = text[i];
+      const w = ctx.measureText(ch).width;
+      if(w > 0){
+        const pos = posAtArcLengthExt(path, s + w/2);
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(pos.angle);
+        ctx.fillStyle = color;
+        ctx.font = fontCss;
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      }
+      s += w + letterSpacing;
+      if(s > rightLimit){ ctx.restore(); return; }
+    }
+    if(!repeat) break;
+    s += letterSpacing * 3;
+    if(hasShape){
+      const shapePos = posAtArcLengthExt(path, s + shapeSize/2);
+      drawShapeAt(ctx, shapePos, shapeType, shapeSize, shapeColor || color);
+      s += shapeSize + letterSpacing * 3;
+    } else {
+      s += letterSpacing * 3;
+    }
+    if(s > rightLimit) break;
+  }
+  ctx.restore();
+}
+
+// Draws one decorative shape centered at `pos` (a {x,y,angle} from the
+// path), rotated to match the path's tangent there, similar to how a
+// character is placed by drawTextOnPath.
+function drawShapeAt(ctx, pos, type, size, color){
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
+  ctx.rotate(pos.angle);
+  ctx.fillStyle = color;
+  const r = size/2;
+  ctx.beginPath();
+  if(type === 'heart'){
+    const w = size, h = size;
+    ctx.moveTo(0, h*0.32);
+    ctx.bezierCurveTo(0, h*0.12, -w*0.22, -h*0.12, -w*0.42, -h*0.12);
+    ctx.bezierCurveTo(-w*0.72, -h*0.12, -w*0.72, h*0.24, -w*0.72, h*0.24);
+    ctx.bezierCurveTo(-w*0.72, h*0.46, -w*0.46, h*0.66, 0, h*0.88);
+    ctx.bezierCurveTo(w*0.46, h*0.66, w*0.72, h*0.46, w*0.72, h*0.24);
+    ctx.bezierCurveTo(w*0.72, h*0.24, w*0.72, -h*0.12, w*0.42, -h*0.12);
+    ctx.bezierCurveTo(w*0.22, -h*0.12, 0, h*0.12, 0, h*0.32);
+    ctx.closePath();
+  } else if(type === 'circle'){
+    ctx.arc(0, 0, r, 0, Math.PI*2);
+  } else if(type === 'star'){
+    const points = 5, outerR = r, innerR = r*0.45;
+    for(let i=0;i<points*2;i++){
+      const rad = i%2===0 ? outerR : innerR;
+      const angle = (Math.PI/points)*i - Math.PI/2;
+      const x = Math.cos(angle)*rad, y = Math.sin(angle)*rad;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  } else if(type === 'cloud'){
+    ctx.arc(-r*0.45, r*0.12, r*0.42, 0, Math.PI*2);
+    ctx.arc(r*0.45, r*0.12, r*0.42, 0, Math.PI*2);
+    ctx.arc(-r*0.05, -r*0.18, r*0.5, 0, Math.PI*2);
+    ctx.arc(r*0.4, -r*0.05, r*0.4, 0, Math.PI*2);
+    ctx.rect(-r*0.5, r*0.1, r, r*0.35);
+  }
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWaveStroke(ctx, path, color, width){
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(path.xs[0], path.ys[0]);
+  for(let i=2;i<=path.N;i+=2){ ctx.lineTo(path.xs[i], path.ys[i]); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function getAnimIcon(){
+  return icons.find(i=>String(i.id)===String(animIconId)) || null;
+}
+
+function easedProgressAt(animT){
+  const dur = Math.max(0.01, animDuration);
+  let u = (animT - animDelay) / dur;
+  u = Math.max(0, Math.min(1, u));
+  return EASINGS[animEasing](u);
+}
+
+// Renders the full scene into ctx (size w x h), shifted left by offsetX.
+// Returns the animated icon's position in ctx-local coordinates (or null).
+// Draws a single layer's content (used by both the live renderer and
+// the cached-background export path below).
+function renderLayerContent(ctx, layer, path, animT, offsetX){
+  if(layer.type === 'line'){
+    const line = lines.find(l=>l.id===layer.id);
+    if(line) drawSmoothLine(ctx, line.points, line.color, strokeWidth);
+  } else if(layer.type === 'waveline'){
+    if(waveVisible) drawWaveStroke(ctx, path, waveColor, waveThickness);
+  } else if(layer.type === 'wavetext'){
+    if(waveText){
+      drawTextOnPath(ctx, path, {
+        text: waveText, fontCss: buildFontCss(), color: waveTextColor,
+        letterSpacing: waveLetterSpacing, repeat: waveRepeat, startS: 0,
+        shapeType, shapeSize, shapeColor
+      });
+    }
+  } else if(layer.type === 'icon'){
+    const icon = icons.find(i=>i.id===layer.id);
+    if(!icon) return null;
+    if(String(icon.id)===String(animIconId)){
+      const u = easedProgressAt(animT);
+      const s = u * path.totalLength;
+      const pos = posAtArcLength(path, s);
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      if(animRotate) ctx.rotate(pos.angle);
+      ctx.drawImage(icon.img, -icon.w/2, -icon.h/2, icon.w, icon.h);
+      ctx.restore();
+      return {x: pos.x - offsetX, y: pos.y, w: icon.w, h: icon.h};
+    } else {
+      ctx.drawImage(icon.img, icon.x, icon.y, icon.w, icon.h);
+    }
+  }
+  return null;
+}
+
+function renderSceneAt(ctx, animT, offsetX, w, h, path){
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(-offsetX, 0);
+
+  let animPos = null;
+
+  layers.forEach(layer=>{
+    if(!layer.visible) return;
+    const pos = renderLayerContent(ctx, layer, path, animT, offsetX);
+    if(pos) animPos = pos;
+  });
+
+  ctx.restore();
+  return animPos;
+}
+
+// ---------- Layers ----------
+// A single ordered list drives z-order for everything drawn: manual
+// lines, the wave stroke, the wave text, and every icon (including
+// whichever one is currently animating). Index 0 = back, last = front.
+function layerLabel(layer){
+  if(layer.type==='wavetext') return 'Tekst (golflijn)';
+  if(layer.type==='waveline') return 'Lijn (golf-omtrek)';
+  if(layer.type==='line'){
+    const idx = lines.findIndex(l=>l.id===layer.id);
+    return 'Losse lijn ' + (idx>=0 ? idx+1 : '?');
+  }
+  if(layer.type==='icon'){
+    const idx = icons.findIndex(i=>i.id===layer.id);
+    const isAnim = String(layer.id)===String(animIconId);
+    return 'Afbeelding ' + (idx>=0 ? idx+1 : '?') + (isAnim ? ' (animeert)' : '');
+  }
+  return '?';
+}
+
+function addLayerFor(type, id){
+  layers.push({type, id, visible:true});
+}
+function removeLayerFor(type, id){
+  layers = layers.filter(l=> !(l.type===type && String(l.id)===String(id)));
+}
+function moveLayer(arrIdx, dir){
+  const j = arrIdx + dir;
+  if(j<0 || j>=layers.length) return;
+  const tmp = layers[arrIdx];
+  layers[arrIdx] = layers[j];
+  layers[j] = tmp;
+  renderLayerList();
+  draw();
+}
+
+function renderLayerList(){
+  const el = document.getElementById('layerList');
+  if(!el) return;
+  el.innerHTML = '';
+  // Front-most layer shown at the top of the panel (reverse of draw order).
+  for(let arrIdx = layers.length-1; arrIdx>=0; arrIdx--){
+    const layer = layers[arrIdx];
+    const row = document.createElement('div');
+    row.className = 'layer-item';
+    const isSelected =
+      (layer.type==='icon' && String(layer.id)===String(selectedIconId)) ||
+      (layer.type==='line' && String(layer.id)===String(activeLineId));
+    if(isSelected) row.classList.add('selected');
+    row.innerHTML = `
+      <button class="layer-vis" data-idx="${arrIdx}" title="Tonen/verbergen">${layer.visible ? '👁' : '🚫'}</button>
+      <span class="layer-label">${layerLabel(layer)}</span>
+      <button class="layer-move" data-idx="${arrIdx}" data-dir="1" title="Naar voren">▲</button>
+      <button class="layer-move" data-idx="${arrIdx}" data-dir="-1" title="Naar achteren">▼</button>
+    `;
+    row.addEventListener('click', (e)=>{
+      if(e.target.closest('button')) return; // vis/move buttons handle themselves
+      if(layer.type==='icon'){
+        selectedIconId = layer.id;
+        syncSelectedIconSizeUI();
+      } else if(layer.type==='line'){
+        activeLineId = layer.id;
+        const line = lines.find(l=>l.id===layer.id);
+        if(line) line.finished = false;
+        renderLineList();
+        updateModeBanner();
+      }
+      renderLayerList();
+      draw();
+    });
+    el.appendChild(row);
+  }
+  el.querySelectorAll('.layer-vis').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      layers[idx].visible = !layers[idx].visible;
+      renderLayerList();
+      draw();
+    });
+  });
+  el.querySelectorAll('.layer-move').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      const dir = parseInt(btn.dataset.dir);
+      moveLayer(idx, dir);
+    });
+  });
+}
+
+// ---------- Draw ----------
+function drawSlideDividers(ctx){
+  ctx.save();
+  ctx.strokeStyle = 'rgba(58,43,34,0.35)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([14,14]);
+  for(let i=1;i<N_SLIDES;i++){
+    ctx.beginPath();
+    ctx.moveTo(i*SLIDE_W, 0);
+    ctx.lineTo(i*SLIDE_W, FULL_H);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.font = '600 26px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(58,43,34,0.4)';
+  for(let i=0;i<N_SLIDES;i++){
+    ctx.fillText('Slide '+(i+1), i*SLIDE_W + 24, 44);
+  }
+  ctx.restore();
+}
+
+function draw(){
+  const path = buildWavePath();
+  lastAnimPos = renderSceneAt(bctx, previewT, 0, FULL_W, FULL_H, path);
+
+  octx.clearRect(0,0,FULL_W,FULL_H);
+  drawSlideDividers(octx);
+  lines.forEach(line=>{
+    if(line.finished) return;
+    const isActive = line.id===activeLineId;
+    line.points.forEach((p,idx)=>{
+      octx.beginPath();
+      octx.arc(p.x,p.y, isActive?16:10, 0, Math.PI*2);
+      octx.fillStyle = isActive ? line.color : line.color+'aa';
+      octx.fill();
+      octx.lineWidth = 4;
+      octx.strokeStyle = '#fff';
+      octx.stroke();
+      if(selectedPoint && selectedPoint.lineId===line.id && selectedPoint.index===idx){
+        octx.beginPath();
+        octx.arc(p.x,p.y,24,0,Math.PI*2);
+        octx.strokeStyle = '#3A2B22';
+        octx.lineWidth = 3;
+        octx.stroke();
+      }
+    });
+  });
+  icons.forEach(icon=>{
+    const isAnim = String(icon.id)===String(animIconId);
+    const isSel = icon.id===selectedIconId;
+    let bx = icon.x, by = icon.y, bw = icon.w, bh = icon.h;
+    if(isAnim && lastAnimPos){
+      bx = lastAnimPos.x - lastAnimPos.w/2;
+      by = lastAnimPos.y - lastAnimPos.h/2;
+      bw = lastAnimPos.w; bh = lastAnimPos.h;
+    }
+    octx.strokeStyle = isSel ? 'rgba(192,91,60,0.7)' : (isAnim ? 'rgba(192,91,60,0.35)' : 'rgba(58,43,34,0.25)');
+    octx.lineWidth = isSel ? 3 : 2;
+    octx.setLineDash(isAnim ? [6,6] : []);
+    octx.strokeRect(bx, by, bw, bh);
+    octx.setLineDash([]);
+    if(isSel){
+      const hx = bx + bw, hy = by + bh;
+      octx.beginPath();
+      octx.arc(hx, hy, 16, 0, Math.PI*2);
+      octx.fillStyle = '#bd949e';
+      octx.fill();
+      octx.lineWidth = 4;
+      octx.strokeStyle = '#fff';
+      octx.stroke();
+      if(!isAnim){
+        // Move handle at the center — always grabs THIS layer, even
+        // when another one is stacked on top of it at this spot.
+        const cx = bx + bw/2, cy = by + bh/2;
+        octx.beginPath();
+        octx.arc(cx, cy, 20, 0, Math.PI*2);
+        octx.fillStyle = 'rgba(192,91,60,0.92)';
+        octx.fill();
+        octx.lineWidth = 3;
+        octx.strokeStyle = '#fff';
+        octx.stroke();
+        octx.save();
+        octx.strokeStyle = '#fff';
+        octx.lineWidth = 2.5;
+        octx.lineCap = 'round';
+        const s = 8;
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+          octx.beginPath();
+          octx.moveTo(cx, cy);
+          octx.lineTo(cx+dx*s, cy+dy*s);
+          octx.stroke();
+        });
+        octx.restore();
+      }
+    }
+  });
+
+  if(activeSnapGuides){
+    octx.save();
+    octx.strokeStyle = '#bd949e';
+    octx.lineWidth = 2;
+    octx.setLineDash([4,4]);
+    if(activeSnapGuides.x !== null){
+      octx.beginPath();
+      octx.moveTo(activeSnapGuides.x, 0);
+      octx.lineTo(activeSnapGuides.x, FULL_H);
+      octx.stroke();
+    }
+    if(activeSnapGuides.y !== null){
+      octx.beginPath();
+      octx.moveTo(0, activeSnapGuides.y);
+      octx.lineTo(FULL_W, activeSnapGuides.y);
+      octx.stroke();
+    }
+    octx.restore();
+  }
+}
+document.getElementById('bgColor').value = bgColor;
+document.getElementById('waveStrokeFields').style.display = waveVisible ? '' : 'none';
+draw();
+renderLineList();
+renderIconList();
+renderLayerList();
+syncSelectedIconSizeUI();
+updateModeBanner();
+
+// Custom web fonts (Montserrat, League Spartan) load asynchronously —
+// redraw once they're actually available so the canvas text doesn't
+// stay stuck on the fallback font.
+if(document.fonts && document.fonts.load){
+  Promise.all([
+    document.fonts.load('700 64px "Montserrat"'),
+    document.fonts.load('700 64px "League Spartan"')
+  ]).catch(()=>{}).finally(()=>{ draw(); });
+  document.fonts.ready.then(()=> draw()).catch(()=>{});
+}
+
+// ---------- Interaction ----------
+function toCanvasCoords(evt){
+  const rect = overlay.getBoundingClientRect();
+  const scaleX = FULL_W / rect.width;
+  const scaleY = FULL_H / rect.height;
+  return {
+    x: (evt.clientX - rect.left) * scaleX,
+    y: (evt.clientY - rect.top) * scaleY
+  };
+}
+
+function hitTestPoint(pos){
+  for(const line of lines){
+    if(line.finished) continue;
+    for(let i=0;i<line.points.length;i++){
+      const p = line.points[i];
+      const d = Math.hypot(p.x-pos.x, p.y-pos.y);
+      if(d < 26) return {lineId: line.id, index: i};
+    }
+  }
+  return null;
+}
+function hitTestIcon(pos){
+  for(let i=icons.length-1;i>=0;i--){
+    const icon = icons[i];
+    if(String(icon.id)===String(animIconId)) continue; // animated icon moves the line itself instead — see hitTestAnimIcon
+    if(pos.x>=icon.x && pos.x<=icon.x+icon.w && pos.y>=icon.y && pos.y<=icon.y+icon.h){
+      return icon.id;
+    }
+  }
+  return null;
+}
+// The animating icon's position always comes from the wave path, so
+// "dragging" it means dragging the path (same as grabbing the text) —
+// this makes that explicit and gives it its own generous hit area
+// instead of silently falling through to "clicked empty space".
+function hitTestAnimIcon(pos){
+  if(!animIconId || !lastAnimPos) return false;
+  const pad = 20;
+  return pos.x >= lastAnimPos.x - pad && pos.x <= lastAnimPos.x + lastAnimPos.w + pad &&
+         pos.y >= lastAnimPos.y - pad && pos.y <= lastAnimPos.y + lastAnimPos.h + pad;
+}
+function hitTestIconHandle(pos){
+  if(!selectedIconId) return false;
+  const icon = icons.find(i=>i.id===selectedIconId);
+  if(!icon) return false;
+  let hx, hy;
+  if(String(icon.id)===String(animIconId) && lastAnimPos){
+    hx = lastAnimPos.x + lastAnimPos.w/2;
+    hy = lastAnimPos.y + lastAnimPos.h/2;
+  } else {
+    hx = icon.x + icon.w; hy = icon.y + icon.h;
+  }
+  const threshold = 26 / Math.max(0.001, baseScale*zoomFactor);
+  return Math.hypot(pos.x-hx, pos.y-hy) < threshold;
+}
+// A dedicated "move" handle at the selected icon's center. Clicking an
+// icon that's partly or fully covered by another one always grabs
+// whichever is on top — this handle instead always belongs to whatever
+// is currently selected (e.g. via the Layers panel), so a covered
+// layer can still be dragged into view without fighting the one above it.
+function hitTestMoveHandle(pos){
+  if(!selectedIconId) return false;
+  const icon = icons.find(i=>i.id===selectedIconId);
+  if(!icon || String(icon.id)===String(animIconId)) return false;
+  const cx = icon.x + icon.w/2, cy = icon.y + icon.h/2;
+  const threshold = 24 / Math.max(0.001, baseScale*zoomFactor);
+  return Math.hypot(pos.x-cx, pos.y-cy) < threshold;
+}
+// ---------- Magnetic snap guides for dragging icons ----------
+function applyIconSnap(icon, x, y){
+  const scale = baseScale * zoomFactor;
+  const threshold = SNAP_THRESHOLD_SCREEN_PX / Math.max(0.001, scale);
+
+  const w = icon.w, h = icon.h;
+  const slideIdx = Math.max(0, Math.min(N_SLIDES-1, Math.floor((x + w/2) / SLIDE_W)));
+  const slideLeft = slideIdx*SLIDE_W, slideRight = slideLeft+SLIDE_W;
+
+  const xTargets = [
+    {v: slideLeft + SLIDE_W/2, kind:'center'},
+    {v: slideLeft, kind:'edge'},
+    {v: slideRight, kind:'edge'}
+  ];
+  const yTargets = [
+    {v: FULL_H/2, kind:'center'},
+    {v: (waveBaselinePct/100)*FULL_H, kind:'edge'}
+  ];
+  icons.forEach(other=>{
+    if(other.id===icon.id || String(other.id)===String(animIconId)) return;
+    xTargets.push({v:other.x, kind:'edge'}, {v:other.x+other.w, kind:'edge'}, {v:other.x+other.w/2, kind:'center'});
+    yTargets.push({v:other.y, kind:'edge'}, {v:other.y+other.h, kind:'edge'}, {v:other.y+other.h/2, kind:'center'});
+  });
+
+  const candidatesX = [
+    {feature:'left', val:x}, {feature:'center', val:x+w/2}, {feature:'right', val:x+w}
+  ];
+  const candidatesY = [
+    {feature:'top', val:y}, {feature:'center', val:y+h/2}, {feature:'bottom', val:y+h}
+  ];
+
+  let bestX = null, bestXDelta = threshold;
+  candidatesX.forEach(c=>{
+    xTargets.forEach(t=>{
+      const d = Math.abs(c.val - t.v);
+      if(d < bestXDelta){ bestXDelta = d; bestX = {feature:c.feature, target:t.v}; }
+    });
+  });
+  let bestY = null, bestYDelta = threshold;
+  candidatesY.forEach(c=>{
+    yTargets.forEach(t=>{
+      const d = Math.abs(c.val - t.v);
+      if(d < bestYDelta){ bestYDelta = d; bestY = {feature:c.feature, target:t.v}; }
+    });
+  });
+
+  let newX = x, newY = y;
+  const guides = {x:null, y:null};
+  if(bestX){
+    if(bestX.feature==='left') newX = bestX.target;
+    else if(bestX.feature==='right') newX = bestX.target - w;
+    else newX = bestX.target - w/2;
+    guides.x = bestX.target;
+  }
+  if(bestY){
+    if(bestY.feature==='top') newY = bestY.target;
+    else if(bestY.feature==='bottom') newY = bestY.target - h;
+    else newY = bestY.target - h/2;
+    guides.y = bestY.target;
+  }
+  return {x:newX, y:newY, guides};
+}
+
+function sampleColorAt(pos){
+  const x = Math.round(Math.max(0, Math.min(FULL_W-1, pos.x)));
+  const y = Math.round(Math.max(0, Math.min(FULL_H-1, pos.y)));
+  const data = bctx.getImageData(x, y, 1, 1).data;
+  const toHex = v => v.toString(16).padStart(2,'0');
+  return '#' + toHex(data[0]) + toHex(data[1]) + toHex(data[2]);
+}
+
+overlay.addEventListener('pointerdown', (e)=>{
+  const pos = toCanvasCoords(e);
+
+  if(pickingColorForLineId){
+    const line = lines.find(l=>l.id===pickingColorForLineId);
+    if(line){
+      pushHistory();
+      line.color = sampleColorAt(pos);
+    }
+    pickingColorForLineId = null;
+    renderLineList();
+    updateModeBanner();
+    draw();
+    return;
+  }
+
+  const ptHit = hitTestPoint(pos);
+  if(ptHit){
+    pushHistory();
+    draggingPoint = ptHit;
+    selectedPoint = ptHit;
+    selectedIconId = null;
+    syncSelectedIconSizeUI();
+    draw();
+    return;
+  }
+
+  if(hitTestIconHandle(pos)){
+    const icon = icons.find(i=>i.id===selectedIconId);
+    pushHistory();
+    resizingIcon = {id: icon.id, startW: icon.w, startH: icon.h, startPosX: pos.x, aspect: icon.w/icon.h};
+    return;
+  }
+
+  if(hitTestMoveHandle(pos)){
+    const icon = icons.find(i=>i.id===selectedIconId);
+    pushHistory();
+    draggingIcon = {id: icon.id, offX: pos.x-icon.x, offY: pos.y-icon.y};
+    return;
+  }
+
+  const iconHit = hitTestIcon(pos);
+  if(iconHit){
+    pushHistory();
+    selectedIconId = iconHit;
+    syncSelectedIconSizeUI();
+    renderLayerList();
+    const icon = icons.find(i=>i.id===iconHit);
+    draggingIcon = {id: iconHit, offX: pos.x-icon.x, offY: pos.y-icon.y};
+    draw();
+    return;
+  }
+
+  if(hitTestAnimIcon(pos)){
+    selectedIconId = animIconId;
+    syncSelectedIconSizeUI();
+    renderLayerList();
+    draggingWave = {
+      startPosX: pos.x, startPosY: pos.y,
+      startOffset: waveOffsetX, startBaselinePct: waveBaselinePct
+    };
+    overlay.style.cursor = 'grabbing';
+    draw();
+    return;
+  }
+
+  // clicked empty space
+  selectedIconId = null;
+  syncSelectedIconSizeUI();
+  if(activeLineId){
+    const line = lines.find(l=>l.id===activeLineId);
+    if(line && !line.finished){
+      pushHistory();
+      line.points.push({x: pos.x, y: pos.y});
+      selectedPoint = {lineId: activeLineId, index: line.points.length-1};
+      renderLineList();
+    }
+  } else {
+    // No line is being edited — treat this as "grab the text" so it
+    // can be dragged freely (horizontally along the path, vertically
+    // by moving the baseline).
+    draggingWave = {
+      startPosX: pos.x, startPosY: pos.y,
+      startOffset: waveOffsetX, startBaselinePct: waveBaselinePct
+    };
+    overlay.style.cursor = 'grabbing';
+  }
+  draw();
+});
+
+window.addEventListener('pointermove', (e)=>{
+  if(!draggingPoint && !draggingIcon && !resizingIcon && !draggingWave) return;
+  const pos = toCanvasCoords(e);
+  if(draggingWave){
+    const dx = pos.x - draggingWave.startPosX;
+    const dy = pos.y - draggingWave.startPosY;
+    waveOffsetX = draggingWave.startOffset + dx;
+    waveBaselinePct = Math.max(0, Math.min(100, draggingWave.startBaselinePct + (dy/FULL_H)*100));
+    syncWaveSliderUI();
+    draw();
+    return;
+  }
+  if(draggingPoint){
+    const line = lines.find(l=>l.id===draggingPoint.lineId);
+    line.points[draggingPoint.index] = {x: pos.x, y: pos.y};
+    draw();
+  } else if(draggingIcon){
+    const icon = icons.find(i=>i.id===draggingIcon.id);
+    let x = pos.x - draggingIcon.offX;
+    let y = pos.y - draggingIcon.offY;
+    const snapped = applyIconSnap(icon, x, y);
+    icon.x = snapped.x;
+    icon.y = snapped.y;
+    activeSnapGuides = snapped.guides;
+    draw();
+  } else if(resizingIcon){
+    const icon = icons.find(i=>i.id===resizingIcon.id);
+    const delta = pos.x - resizingIcon.startPosX;
+    let newW = Math.max(30, resizingIcon.startW + delta);
+    let newH = newW / resizingIcon.aspect;
+    icon.w = newW;
+    icon.h = newH;
+    if(String(icon.id)===String(animIconId)) syncAnimIconSizeUI();
+    if(String(icon.id)===String(selectedIconId)) syncSelectedIconSizeUI();
+    draw();
+  }
+});
+window.addEventListener('pointerup', ()=>{
+  draggingPoint = null;
+  draggingIcon = null;
+  resizingIcon = null;
+  activeSnapGuides = null;
+  if(draggingWave){ draggingWave = null; overlay.style.cursor = activeLineId ? 'crosshair' : 'grab'; }
+});
+
+function syncWaveSliderUI(){
+  const offEl = document.getElementById('waveOffsetX');
+  const offVal = document.getElementById('waveOffsetXVal');
+  if(offEl){ offEl.value = waveOffsetX; }
+  if(offVal){ offVal.textContent = Math.round(waveOffsetX)+'px'; }
+  const baseEl = document.getElementById('waveBaseline');
+  const baseVal = document.getElementById('waveBaselineVal');
+  if(baseEl){ baseEl.value = waveBaselinePct; }
+  if(baseVal){ baseVal.textContent = Math.round(waveBaselinePct)+'%'; }
+}
+
+window.addEventListener('keydown', (e)=>{
+  const tag = (e.target && e.target.tagName) || '';
+  const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+  if(e.key==='Escape' && pickingColorForLineId){
+    pickingColorForLineId = null;
+    renderLineList();
+    updateModeBanner();
+    return;
+  }
+
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='z'){
+    if(inField) return;
+    e.preventDefault();
+    undo();
+    return;
+  }
+
+  if((e.key==='Delete' || e.key==='Backspace') && selectedPoint && !inField){
+    pushHistory();
+    const line = lines.find(l=>l.id===selectedPoint.lineId);
+    if(line){
+      line.points.splice(selectedPoint.index,1);
+      selectedPoint = null;
+      renderLineList();
+      draw();
+    }
+    return;
+  }
+
+  if(e.key==='Enter' && activeLineId && !inField){
+    e.preventDefault();
+    pushHistory();
+    const line = lines.find(l=>l.id===activeLineId);
+    if(line) line.finished = true;
+    activeLineId = null;
+    selectedPoint = null;
+    renderLineList();
+    updateModeBanner();
+    draw();
+  }
+
+  // Nudge the selected image with the arrow keys — precise, no
+  // dragging needed. Hold Shift for bigger steps.
+  if(selectedIconId && !inField && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+    const icon = icons.find(i=>i.id===selectedIconId);
+    if(icon && String(icon.id)!==String(animIconId)){
+      e.preventDefault();
+      const step = e.shiftKey ? 20 : 2;
+      if(e.key==='ArrowUp') icon.y -= step;
+      if(e.key==='ArrowDown') icon.y += step;
+      if(e.key==='ArrowLeft') icon.x -= step;
+      if(e.key==='ArrowRight') icon.x += step;
+      draw();
+    }
+  }
+});
+
+// ---------- Preview modal: simulates the Instagram carousel ----------
+const previewCanvas = document.getElementById('previewCanvas');
+previewCanvas.width = SLIDE_W;
+previewCanvas.height = SLIDE_H;
+const previewCtx = previewCanvas.getContext('2d');
+
+let previewModalState = null; // {path, tEnterList, tEndAll, slideIndex, playing, currentAnimT, startPerf, startAnimT, rafId}
+
+function renderPreviewDots(){
+  const el = document.getElementById('previewDots');
+  el.innerHTML = '';
+  for(let i=0;i<N_SLIDES;i++){
+    const dot = document.createElement('span');
+    dot.className = 'preview-dot' + (previewModalState && previewModalState.slideIndex===i ? ' active' : '');
+    el.appendChild(dot);
+  }
+}
+
+function openPreviewModal(){
+  const path = buildWavePath();
+  const tEnterList = computeEnterTimes(path);
+  const tEndAll = animDelay + animDuration + animHold;
+  previewModalState = {path, tEnterList, tEndAll, slideIndex:0, playing:true, currentAnimT:0};
+  document.getElementById('previewOverlay').classList.add('open');
+  renderPreviewDots();
+  startPreviewSlide(0);
+}
+
+function closePreviewModal(){
+  if(previewModalState && previewModalState.rafId) cancelAnimationFrame(previewModalState.rafId);
+  previewModalState = null;
+  document.getElementById('previewOverlay').classList.remove('open');
+}
+
+function startPreviewSlide(idx){
+  if(!previewModalState) return;
+  if(previewModalState.rafId) cancelAnimationFrame(previewModalState.rafId);
+  idx = (idx + N_SLIDES) % N_SLIDES;
+  previewModalState.slideIndex = idx;
+  previewModalState.playing = true;
+  previewModalState.currentAnimT = previewModalState.tEnterList[idx];
+  previewModalState.startPerf = performance.now();
+  previewModalState.startAnimT = previewModalState.currentAnimT;
+  document.getElementById('previewSlideLabel').textContent = `Slide ${idx+1} / ${N_SLIDES}`;
+  document.getElementById('previewPlayPauseBtn').textContent = '❚❚ Pauze';
+  renderPreviewDots();
+  previewModalLoop();
+}
+
+function previewModalLoop(){
+  if(!previewModalState) return;
+  const st = previewModalState;
+  if(st.playing){
+    const elapsed = (performance.now() - st.startPerf)/1000;
+    st.currentAnimT = Math.min(st.tEndAll, st.startAnimT + elapsed);
+    if(st.currentAnimT >= st.tEndAll){
+      st.playing = false;
+      document.getElementById('previewPlayPauseBtn').textContent = '▶ Opnieuw';
+    }
+  }
+  renderSceneAt(previewCtx, st.currentAnimT, st.slideIndex*SLIDE_W, SLIDE_W, SLIDE_H, st.path);
+  st.rafId = requestAnimationFrame(previewModalLoop);
+}
+
+document.getElementById('previewCarouselBtn').addEventListener('click', ()=>{
+  const icon = getAnimIcon();
+  if(!icon){
+    alert('Kies eerst bij "Animatie" welke afbeelding moet meebewegen over de lijn.');
+    return;
+  }
+  previewPlaying = false;
+  updatePlayButton();
+  openPreviewModal();
+});
+document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
+document.getElementById('previewOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'previewOverlay') closePreviewModal();
+});
+document.getElementById('previewPrevBtn').addEventListener('click', ()=>{
+  if(!previewModalState) return;
+  startPreviewSlide(previewModalState.slideIndex - 1);
+});
+document.getElementById('previewNextBtn').addEventListener('click', ()=>{
+  if(!previewModalState) return;
+  startPreviewSlide(previewModalState.slideIndex + 1);
+});
+document.getElementById('previewPlayPauseBtn').addEventListener('click', ()=>{
+  if(!previewModalState) return;
+  const st = previewModalState;
+  if(!st.playing && st.currentAnimT >= st.tEndAll){
+    // restart this slide from its natural entry point
+    startPreviewSlide(st.slideIndex);
+    return;
+  }
+  st.playing = !st.playing;
+  if(st.playing){
+    st.startPerf = performance.now();
+    st.startAnimT = st.currentAnimT;
+  }
+  document.getElementById('previewPlayPauseBtn').textContent = st.playing ? '❚❚ Pauze' : '▶ Verder';
+});
+window.addEventListener('keydown', (e)=>{
+  if(!previewModalState) return;
+  if(e.key === 'Escape') closePreviewModal();
+  if(e.key === 'ArrowRight') startPreviewSlide(previewModalState.slideIndex + 1);
+  if(e.key === 'ArrowLeft') startPreviewSlide(previewModalState.slideIndex - 1);
+});
+
+// ---------- Export: static PNG slides ----------
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const path = buildWavePath();
+  const clean = document.createElement('canvas');
+  clean.width = FULL_W; clean.height = FULL_H;
+  const cctx = clean.getContext('2d');
+  renderSceneAt(cctx, previewT, 0, FULL_W, FULL_H, path);
+
+  for(let i=0;i<N_SLIDES;i++){
+    const slice = document.createElement('canvas');
+    slice.width = SLIDE_W; slice.height = SLIDE_H;
+    const sctx = slice.getContext('2d');
+    sctx.drawImage(clean, i*SLIDE_W, 0, SLIDE_W, SLIDE_H, 0, 0, SLIDE_W, SLIDE_H);
+    slice.toBlob(blob=>{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `slide-${i+1}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, 'image/png');
+  }
+});
+
+// ---------- Export: animated video slides (seamless carousel) ----------
+function invertEasing(pTarget, easingName){
+  const fn = EASINGS[easingName] || EASINGS.linear;
+  const STEPS = 400;
+  let prevU = 0, prevP = fn(0);
+  for(let k=1;k<=STEPS;k++){
+    const u = k/STEPS;
+    const p = fn(u);
+    if(p >= pTarget){
+      const t = (p - prevP) > 0 ? (pTarget - prevP)/(p - prevP) : 0;
+      return prevU + (u - prevU)*t;
+    }
+    prevU = u; prevP = p;
+  }
+  return 1;
+}
+
+function computeEnterTimes(path){
+  const icon = getAnimIcon();
+  const halfW = icon ? icon.w/2 : 0;
+  const times = [0];
+  for(let i=1;i<N_SLIDES;i++){
+    const boundaryX = Math.max(0, i*SLIDE_W - halfW);
+    const sBoundary = arcLengthAtX(path, boundaryX);
+    const pBoundary = path.totalLength>0 ? sBoundary/path.totalLength : 0;
+    const u = invertEasing(pBoundary, animEasing);
+    const t = animDelay + u*animDuration;
+    const tEndAll = animDelay+animDuration+animHold;
+    times.push(Math.max(0, Math.min(t, tEndAll)));
+  }
+  return times;
+}
+
+function downloadBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+// ---------- Fast export rendering: cache everything except the
+// moving icon, so each recorded frame only has to draw two images
+// instead of redrawing every character of tiled text. Rebuilding the
+// full text/line layout on every single captured frame was the cause
+// of the original stutter — this makes each frame cheap enough to
+// hit a steady 30fps no matter which recording method is used below.
+function buildExportCaches(path){
+  const icon = getAnimIcon();
+  const iconLayerIdx = icon
+    ? layers.findIndex(l=>l.type==='icon' && String(l.id)===String(icon.id))
+    : -1;
+
+  const below = document.createElement('canvas');
+  below.width = FULL_W; below.height = FULL_H;
+  const belowCtx = below.getContext('2d');
+  belowCtx.fillStyle = bgColor;
+  belowCtx.fillRect(0,0,FULL_W,FULL_H);
+
+  const above = document.createElement('canvas');
+  above.width = FULL_W; above.height = FULL_H;
+  const aboveCtx = above.getContext('2d');
+
+  layers.forEach((layer, idx)=>{
+    if(!layer.visible) return;
+    if(iconLayerIdx>=0 && idx===iconLayerIdx) return; // the moving icon itself — drawn fresh each frame
+    const target = (iconLayerIdx<0 || idx<iconLayerIdx) ? belowCtx : aboveCtx;
+    renderLayerContent(target, layer, path, 0, 0);
+  });
+
+  return {below, above, iconLayerIdx};
+}
+
+// Fast per-frame draw for export: blit the two cached layers and
+// draw only the moving icon fresh.
+function renderCachedFrame(ctx, caches, animT, offsetX, w, h, path){
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(caches.below, offsetX, 0, w, h, 0, 0, w, h);
+  const icon = getAnimIcon();
+  if(icon && caches.iconLayerIdx>=0){
+    const u = easedProgressAt(animT);
+    const s = u * path.totalLength;
+    const pos = posAtArcLength(path, s);
+    ctx.save();
+    ctx.translate(pos.x - offsetX, pos.y);
+    if(animRotate) ctx.rotate(pos.angle);
+    ctx.drawImage(icon.img, -icon.w/2, -icon.h/2, icon.w, icon.h);
+    ctx.restore();
+  }
+  ctx.drawImage(caches.above, offsetX, 0, w, h, 0, 0, w, h);
+}
+
+// ---------- MP4 export via WebCodecs (primary path) ----------
+// This is the real fix for the stutter, not just a speed-up: MediaRecorder
+// records in real time, so every frame's timing depends on the browser
+// actually rendering it fast enough at that exact moment — any hiccup
+// (GC pause, a slow tick, system load) shows up as an uneven/juddery
+// frame in the final file, and there's no way to correct that after
+// the fact. WebCodecs instead lets us generate each frame on our own
+// schedule and stamp it with a mathematically perfect timestamp
+// (frame N is always exactly N/30 seconds in) — real-world rendering
+// speed can only affect how long *export* takes, never the smoothness
+// of the resulting video.
+const H264_CANDIDATES = ['avc1.640028','avc1.4d0028','avc1.42001f'];
+const EXPORT_BITRATE = 60_000_000; // very generous — short single-slide clips, sharpness matters far more than file size
+
+async function pickWebCodecsCodec(w, h){
+  if(!window.VideoEncoder || !window.Mp4Muxer) return null;
+  const candidates = [
+    ...H264_CANDIDATES.map(c=>({webCodecsCodec:c, muxerCodec:'avc', label:'H.264'})),
+    {webCodecsCodec:'vp09.00.10.08', muxerCodec:'vp9', label:'VP9'}
+  ];
+  // Hardware H.264/VP9 encoders on some machines silently ignore the
+  // requested bitrate and fall back to a much lower default (this is
+  // what caused the soft/blurry export) — software encoding respects
+  // it properly, so it's tried first. If software isn't available for
+  // a given codec, this still falls back to whatever the browser has.
+  const hwPrefs = ['prefer-software', 'no-preference'];
+  for(const c of candidates){
+    for(const hardwareAcceleration of hwPrefs){
+      try{
+        const support = await VideoEncoder.isConfigSupported({
+          codec: c.webCodecsCodec, width: w, height: h, bitrate: EXPORT_BITRATE, framerate: 30,
+          bitrateMode: 'variable', latencyMode: 'quality', hardwareAcceleration
+        });
+        if(support && support.supported) return {...c, hardwareAcceleration};
+      } catch(err){ /* try next */ }
+    }
+  }
+  return null;
+}
+
+async function recordSlideWebCodecs(index, path, tEnterList, tEndAll, caches, codec){
+  const FPS = 30;
+  const offsetX = index*SLIDE_W;
+  const tEnter = tEnterList[index];
+  const duration = Math.max(0, tEndAll - tEnter);
+  const totalFrames = Math.max(1, Math.round(duration * FPS));
+
+  const rc = document.createElement('canvas');
+  rc.width = SLIDE_W; rc.height = SLIDE_H;
+  const rctx = rc.getContext('2d');
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: codec.muxerCodec, width: SLIDE_W, height: SLIDE_H, frameRate: FPS },
+    fastStart: 'in-memory'
+  });
+
+  let encoderError = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => { encoderError = e; }
+  });
+  encoder.configure({
+    codec: codec.webCodecsCodec,
+    width: SLIDE_W,
+    height: SLIDE_H,
+    bitrate: EXPORT_BITRATE,
+    bitrateMode: 'variable',
+    latencyMode: 'quality',
+    hardwareAcceleration: codec.hardwareAcceleration || 'prefer-software',
+    framerate: FPS
+  });
+
+  for(let frameIdx=0; frameIdx<totalFrames; frameIdx++){
+    if(encoderError) throw encoderError;
+    const animT = Math.min(tEndAll, tEnter + frameIdx/FPS);
+    renderCachedFrame(rctx, caches, animT, offsetX, SLIDE_W, SLIDE_H, path);
+    const frame = new VideoFrame(rc, {
+      timestamp: Math.round(frameIdx * (1e6/FPS)),
+      duration: Math.round(1e6/FPS)
+    });
+    encoder.encode(frame, {keyFrame: frameIdx % 60 === 0});
+    frame.close();
+    while(encoder.encodeQueueSize > 8){
+      await new Promise(r=>setTimeout(r, 0));
+    }
+  }
+  await encoder.flush();
+  encoder.close();
+  if(encoderError) throw encoderError;
+  muxer.finalize();
+  return new Blob([muxer.target.buffer], {type:'video/mp4'});
+}
+
+// ---------- WebM export via MediaRecorder (fallback path) ----------
+// Used only if WebCodecs/H.264/VP9 encoding isn't available at all in
+// the browser. Real-time capture, so in rare cases on an overloaded
+// machine a frame could still be uneven — WebCodecs above avoids that
+// entirely, which is why it's tried first.
+function pickMimeType(){
+  const options = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  for(const o of options){
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported(o)) return o;
+  }
+  return '';
+}
+
+function recordSlideMediaRecorder(index, path, tEnterList, tEndAll, caches, mimeType){
+  return new Promise((resolve, reject)=>{
+    const rc = document.createElement('canvas');
+    rc.width = SLIDE_W; rc.height = SLIDE_H;
+    const rctx = rc.getContext('2d');
+    const stream = rc.captureStream(30);
+    let rec;
+    try{
+      rec = mimeType ? new MediaRecorder(stream, {mimeType, videoBitsPerSecond: EXPORT_BITRATE})
+                      : new MediaRecorder(stream, {videoBitsPerSecond: EXPORT_BITRATE});
+    } catch(err){
+      reject(err);
+      return;
+    }
+    const chunks = [];
+    rec.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = ()=>{
+      resolve(new Blob(chunks, {type: mimeType || 'video/webm'}));
+    };
+    rec.onerror = (e)=> reject(e.error || new Error('MediaRecorder fout'));
+
+    const offsetX = index*SLIDE_W;
+    const tEnter = tEnterList[index];
+    let started = false;
+    let recStartPerf = null;
+
+    function frame(){
+      const now = performance.now();
+      if(!started){
+        started = true;
+        recStartPerf = now;
+        rec.start(100);
+      }
+      const elapsed = (now - recStartPerf)/1000;
+      let animT = tEnter + elapsed;
+      if(animT >= tEndAll){
+        renderCachedFrame(rctx, caches, tEndAll, offsetX, SLIDE_W, SLIDE_H, path);
+        setTimeout(()=>{ if(rec.state!=='inactive') rec.stop(); }, 150);
+        return;
+      }
+      renderCachedFrame(rctx, caches, animT, offsetX, SLIDE_W, SLIDE_H, path);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+document.getElementById('exportVideoBtn').addEventListener('click', async ()=>{
+  const statusEl = document.getElementById('exportStatus');
+  const resultsEl = document.getElementById('exportResults');
+  const icon = getAnimIcon();
+  if(!window.MediaRecorder && !window.VideoEncoder){
+    statusEl.textContent = 'Video-opname wordt niet ondersteund in deze browser. Gebruik Chrome of Edge.';
+    return;
+  }
+  if(!icon){
+    alert('Kies eerst bij "Animatie" welke afbeelding moet meebewegen over de lijn.');
+    return;
+  }
+  const exportBtns = [document.getElementById('exportVideoBtn'), document.getElementById('exportBtn')];
+  exportBtns.forEach(b=> b.disabled = true);
+  const wasPlaying = previewPlaying;
+  previewPlaying = false;
+  updatePlayButton();
+  resultsEl.innerHTML = '';
+
+  const path = buildWavePath();
+  const tEnterList = computeEnterTimes(path);
+  const tEndAll = animDelay + animDuration + animHold;
+  const caches = buildExportCaches(path);
+
+  try{
+    const results = []; // {filename, blob, mimeType}
+    const codec = await pickWebCodecsCodec(SLIDE_W, SLIDE_H);
+    if(codec){
+      for(let i=0;i<N_SLIDES;i++){
+        statusEl.textContent = `Bezig met opnemen: slide ${i+1} van ${N_SLIDES} (${codec.label}, MP4)…`;
+        const blob = await recordSlideWebCodecs(i, path, tEnterList, tEndAll, caches, codec);
+        results.push({filename: `slide-${i+1}.mp4`, blob, mimeType: 'video/mp4'});
+      }
+    } else {
+      const mimeType = pickMimeType();
+      for(let i=0;i<N_SLIDES;i++){
+        statusEl.textContent = `Bezig met opnemen: slide ${i+1} van ${N_SLIDES} (WebM — MP4 niet beschikbaar in deze browser)…`;
+        const blob = await recordSlideMediaRecorder(i, path, tEnterList, tEndAll, caches, mimeType);
+        results.push({filename: `slide-${i+1}.webm`, blob, mimeType: mimeType || 'video/webm'});
+      }
+    }
+    statusEl.textContent = `Klaar — ${N_SLIDES} video-slides klaar hieronder.`;
+    renderExportResults(results);
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = 'Er ging iets mis bij het opnemen: ' + (err && err.message ? err.message : err);
+  } finally {
+    exportBtns.forEach(b=> b.disabled = false);
+    draw();
+  }
+});
+
+// Renders one row per slide with a save/share action, instead of
+// auto-triggering several downloads in a row. On iPhone/iPad, tapping
+// multiple automatic downloads either gets blocked or just lands the
+// files in the Files app, not Camera Roll — the native share sheet
+// (which needs its own direct tap per file) is what actually offers
+// "Save Video" straight to Photos. On desktop this still works exactly
+// like a normal download link, plus a "Download alles" convenience button.
+function renderExportResults(results){
+  const el = document.getElementById('exportResults');
+  el.innerHTML = '';
+  const canShareFiles = !!(navigator.canShare && navigator.share);
+
+  if(results.length > 1){
+    const allRow = document.createElement('div');
+    allRow.className = 'row';
+    allRow.style.marginBottom = '4px';
+    const allBtn = document.createElement('button');
+    allBtn.className = 'secondary';
+    allBtn.style.fontSize = '12px';
+    allBtn.textContent = 'Download alles (desktop)';
+    allBtn.addEventListener('click', ()=>{
+      results.forEach(r=> downloadBlob(r.blob, r.filename));
+    });
+    allRow.appendChild(allBtn);
+    el.appendChild(allRow);
+  }
+
+  results.forEach((r, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'line-item';
+    row.style.cursor = 'default';
+    const label = document.createElement('span');
+    label.style.flex = '1';
+    label.textContent = `Slide ${idx+1} — ${(r.blob.size/1024).toFixed(0)} KB`;
+    row.appendChild(label);
+
+    const btn = document.createElement('button');
+    btn.className = 'secondary';
+    btn.style.fontSize = '12px';
+
+    const file = new File([r.blob], r.filename, {type: r.mimeType});
+    const canShareThis = canShareFiles && (()=>{ try{ return navigator.canShare({files:[file]}); } catch(e){ return false; } })();
+
+    if(canShareThis){
+      btn.textContent = 'Opslaan in Camera rol ▸';
+      btn.addEventListener('click', async ()=>{
+        try{
+          await navigator.share({files:[file]});
+        } catch(err){
+          if(err && err.name !== 'AbortError') console.error(err);
+        }
+      });
+    } else {
+      btn.textContent = 'Downloaden';
+      btn.addEventListener('click', ()=> downloadBlob(r.blob, r.filename));
+    }
+    row.appendChild(btn);
+    el.appendChild(row);
+  });
+}
+
+// ---------- Project save / open ----------
+function serializeProject(){
+  return {
+    version: 1,
+    slideW: SLIDE_W, slideH: SLIDE_H, nSlides: N_SLIDES,
+    waveText, waveRepeat, waveFontFamily, waveFontSize, waveBold, waveTextColor,
+    waveLetterSpacing, waveAmplitude, waveWavelength, wavePhase, waveBaselinePct,
+    waveOffsetX, waveVisible, waveColor, waveThickness,
+    shapeType, shapeSize, shapeColor,
+    shapeCounter,
+    pathShapes: pathShapes.map(s=>({id:s.id, type:s.type, insertX:s.insertX, size:s.size})),
+    bgColor, strokeWidth,
+    animIconId, animDuration, animDelay, animHold, animEasing, animRotate,
+    lineCounter, iconCounter,
+    lines: lines.map(l=>({id:l.id, color:l.color, finished:l.finished,
+      points: l.points.map(p=>({x:p.x, y:p.y}))})),
+    icons: icons.map(i=>({id:i.id, x:i.x, y:i.y, w:i.w, h:i.h, src:i.img.src})),
+    layers: layers.map(l=>({type:l.type, id:l.id, visible:l.visible}))
+  };
+}
+
+function applyAllUIFromState(){
+  document.getElementById('waveText').value = waveText;
+  document.getElementById('waveRepeat').checked = waveRepeat;
+  document.getElementById('waveFontFamily').value = waveFontFamily;
+  document.getElementById('waveFontSize').value = waveFontSize;
+  document.getElementById('waveFontSizeVal').textContent = waveFontSize+'px';
+  document.getElementById('waveBold').checked = waveBold;
+  document.getElementById('waveTextColor').value = waveTextColor;
+  document.getElementById('waveLetterSpacing').value = waveLetterSpacing;
+  document.getElementById('waveLetterSpacingVal').textContent = waveLetterSpacing+'px';
+  document.getElementById('waveAmplitude').value = waveAmplitude;
+  document.getElementById('waveAmplitudeVal').textContent = waveAmplitude+'px';
+  document.getElementById('waveWavelength').value = waveWavelength;
+  document.getElementById('waveWavelengthVal').textContent = waveWavelength+'px';
+  document.getElementById('wavePhase').value = wavePhase;
+  document.getElementById('wavePhaseVal').textContent = wavePhase+'°';
+  document.getElementById('waveBaseline').value = waveBaselinePct;
+  document.getElementById('waveBaselineVal').textContent = Math.round(waveBaselinePct)+'%';
+  document.getElementById('waveOffsetX').value = waveOffsetX;
+  document.getElementById('waveOffsetXVal').textContent = Math.round(waveOffsetX)+'px';
+  document.getElementById('waveVisible').checked = waveVisible;
+  document.getElementById('waveStrokeFields').style.display = waveVisible ? '' : 'none';
+  document.getElementById('waveColor').value = waveColor;
+  document.getElementById('shapeType').value = shapeType;
+  document.getElementById('shapeColor').value = shapeColor;
+  document.getElementById('shapeSize').value = shapeSize;
+  document.getElementById('shapeSizeVal').textContent = Math.round(shapeSize)+'px';
+  document.getElementById('waveThickness').value = waveThickness;
+  document.getElementById('bgColor').value = bgColor;
+  document.getElementById('strokeWidth').value = strokeWidth;
+  document.getElementById('animDuration').value = animDuration;
+  document.getElementById('animDurationVal').textContent = animDuration.toFixed(1)+'s';
+  document.getElementById('animDelay').value = animDelay;
+  document.getElementById('animDelayVal').textContent = animDelay.toFixed(1)+'s';
+  document.getElementById('animHold').value = animHold;
+  document.getElementById('animHoldVal').textContent = animHold.toFixed(1)+'s';
+  document.getElementById('animEasing').value = animEasing;
+  document.getElementById('animRotate').checked = animRotate;
+}
+
+function loadIconImage(src){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Applies a previously-serialized project object (from either the
+// in-browser database or an imported .json backup) to the live state.
+async function applyProjectData(data){
+  const loadedIcons = await Promise.all((data.icons||[]).map(async (iconData)=>{
+    const img = await loadIconImage(iconData.src);
+    return {id: iconData.id, img, x: iconData.x, y: iconData.y, w: iconData.w, h: iconData.h};
+  }));
+
+  // Restore the saved canvas format directly (no rescaling — these
+  // positions were already saved in that format's coordinate space).
+  if(data.slideW && data.slideH){
+    SLIDE_W = data.slideW; SLIDE_H = data.slideH;
+    N_SLIDES = data.nSlides || N_SLIDES;
+    FULL_W = SLIDE_W * N_SLIDES; FULL_H = SLIDE_H;
+    [baseCanvas, overlay].forEach(c=>{ c.width = FULL_W; c.height = FULL_H; });
+    previewCanvas.width = SLIDE_W; previewCanvas.height = SLIDE_H;
+    document.getElementById('slideCount').value = N_SLIDES;
+    document.getElementById('slideCountVal').textContent = N_SLIDES;
+  }
+
+  waveText = data.waveText ?? waveText;
+  waveRepeat = data.waveRepeat ?? waveRepeat;
+  waveFontFamily = data.waveFontFamily ?? waveFontFamily;
+  waveFontSize = data.waveFontSize ?? waveFontSize;
+  waveBold = data.waveBold ?? waveBold;
+  waveTextColor = data.waveTextColor ?? waveTextColor;
+  waveLetterSpacing = data.waveLetterSpacing ?? waveLetterSpacing;
+  waveAmplitude = data.waveAmplitude ?? waveAmplitude;
+  waveWavelength = data.waveWavelength ?? waveWavelength;
+  wavePhase = data.wavePhase ?? wavePhase;
+  waveBaselinePct = data.waveBaselinePct ?? waveBaselinePct;
+  waveOffsetX = data.waveOffsetX ?? waveOffsetX;
+  waveVisible = data.waveVisible ?? waveVisible;
+  waveColor = data.waveColor ?? waveColor;
+  shapeType = data.shapeType ?? shapeType;
+  shapeSize = data.shapeSize ?? shapeSize;
+  shapeColor = data.shapeColor ?? shapeColor;
+  shapeCounter = data.shapeCounter ?? shapeCounter;
+  pathShapes = (data.pathShapes||[]).map(s=>({id:s.id, type:s.type, insertX:s.insertX, size:s.size}));
+  selectedShapeId = null;
+  waveThickness = data.waveThickness ?? waveThickness;
+  bgColor = data.bgColor ?? bgColor;
+  strokeWidth = data.strokeWidth ?? strokeWidth;
+  animIconId = data.animIconId ?? '';
+  animDuration = data.animDuration ?? animDuration;
+  animDelay = data.animDelay ?? animDelay;
+  animHold = data.animHold ?? animHold;
+  animEasing = data.animEasing ?? animEasing;
+  animRotate = data.animRotate ?? animRotate;
+  lineCounter = data.lineCounter ?? lineCounter;
+  iconCounter = data.iconCounter ?? iconCounter;
+
+  lines = (data.lines||[]).map(l=>({id:l.id, color:l.color, finished:l.finished,
+    points: l.points.map(p=>({x:p.x, y:p.y}))}));
+  icons = loadedIcons;
+  layers = (data.layers && data.layers.length) ? data.layers.map(l=>({type:l.type, id:l.id, visible:l.visible}))
+    : [{type:'waveline', visible:true}, {type:'wavetext', visible:true}];
+
+  activeLineId = null; selectedPoint = null; selectedIconId = null;
+  history = [];
+
+  applyAllUIFromState();
+  renderLineList();
+  renderIconList();
+  renderLayerList();
+  renderPathShapeList();
+  syncSelectedPathShapeUI();
+  syncSelectedIconSizeUI();
+  syncAnimIconSizeUI();
+  updateModeBanner();
+  applyResponsiveScale();
+  renderFormatButtons();
+  draw();
+}
+
+// ---------- In-browser storage (IndexedDB) — the primary way to save ----------
+const PROJECT_DB_NAME = 'KronkellijnProjects';
+const PROJECT_STORE = 'projects';
+
+function openProjectDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(PROJECT_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      req.result.createObjectStore(PROJECT_STORE, {keyPath:'name'});
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function dbSaveProject(name, data){
+  const db = await openProjectDB();
+  await new Promise((resolve, reject)=>{
+    const tx = db.transaction(PROJECT_STORE, 'readwrite');
+    tx.objectStore(PROJECT_STORE).put({name, data, savedAt: Date.now()});
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+  });
+  // Ook naar Supabase wegschrijven zodat het project op al je apparaten
+  // beschikbaar is. Lukt dit niet (offline, niet ingesteld,...) dan blijft
+  // de lokale (IndexedDB) kopie hierboven gewoon staan.
+  if (window.sb){
+    try{
+      const { error } = await window.sb.from('kronkellijn_projects')
+        .upsert({ name, data, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    }catch(err){
+      console.error('Supabase opslaan mislukt (lokaal is wel bewaard):', err);
+    }
+  }
+}
+async function dbListProjects(){
+  if (window.sb){
+    try{
+      const { data, error } = await window.sb.from('kronkellijn_projects')
+        .select('name, data, updated_at')
+        .order('updated_at', { ascending:false });
+      if (error) throw error;
+      return data.map(r => ({ name:r.name, data:r.data, savedAt: new Date(r.updated_at).getTime() }));
+    }catch(err){
+      console.error('Projecten ophalen uit Supabase mislukt, lokale lijst gebruikt:', err);
+    }
+  }
+  const db = await openProjectDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(PROJECT_STORE, 'readonly');
+    const req = tx.objectStore(PROJECT_STORE).getAll();
+    req.onsuccess = ()=> resolve(req.result.sort((a,b)=> b.savedAt - a.savedAt));
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function dbLoadProject(name){
+  if (window.sb){
+    try{
+      const { data, error } = await window.sb.from('kronkellijn_projects')
+        .select('name, data, updated_at')
+        .eq('name', name)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) return { name:data.name, data:data.data, savedAt: new Date(data.updated_at).getTime() };
+    }catch(err){
+      console.error('Project laden uit Supabase mislukt, lokale kopie gebruikt:', err);
+    }
+  }
+  const db = await openProjectDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(PROJECT_STORE, 'readonly');
+    const req = tx.objectStore(PROJECT_STORE).get(name);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function dbDeleteProject(name){
+  const db = await openProjectDB();
+  await new Promise((resolve, reject)=>{
+    const tx = db.transaction(PROJECT_STORE, 'readwrite');
+    tx.objectStore(PROJECT_STORE).delete(name);
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+  });
+  if (window.sb){
+    try{
+      const { error } = await window.sb.from('kronkellijn_projects').delete().eq('name', name);
+      if (error) throw error;
+    }catch(err){
+      console.error('Supabase verwijderen mislukt:', err);
+    }
+  }
+}
+
+function formatSavedAt(ts){
+  const d = new Date(ts);
+  const pad = n=> String(n).padStart(2,'0');
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+let currentProjectName = null;
+
+async function renderSavedProjectsList(){
+  const el = document.getElementById('savedProjectsList');
+  let projects = [];
+  try{ projects = await dbListProjects(); } catch(err){ console.error(err); }
+  el.innerHTML = '';
+  if(!projects.length){
+    el.innerHTML = '<div class="hint" style="margin:0;">Nog geen opgeslagen projecten.</div>';
+    return;
+  }
+  projects.forEach(p=>{
+    const row = document.createElement('div');
+    row.className = 'line-item' + (p.name===currentProjectName ? ' active' : '');
+    row.innerHTML = `
+      <span style="flex:1;">${p.name}</span>
+      <span style="font-size:11px; color:#a08d76;">${formatSavedAt(p.savedAt)}</span>
+      <button class="del" title="Verwijderen" data-name="${p.name}">✕</button>
+    `;
+    row.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('del')) return;
+      loadProjectByName(p.name);
+    });
+    row.querySelector('.del').addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if(!confirm(`"${p.name}" verwijderen?`)) return;
+      await dbDeleteProject(p.name);
+      renderSavedProjectsList();
+    });
+    el.appendChild(row);
+  });
+}
+
+async function loadProjectByName(name){
+  const statusEl = document.getElementById('projectStatus');
+  statusEl.textContent = 'Project laden…';
+  try{
+    const record = await dbLoadProject(name);
+    if(!record){ statusEl.textContent = 'Project niet gevonden.'; return; }
+    await applyProjectData(record.data);
+    currentProjectName = name;
+    document.getElementById('projectNameInput').value = name;
+    document.getElementById('updateProjectBtn').style.display = '';
+    renderSavedProjectsList();
+    statusEl.textContent = `"${name}" geladen.`;
+    setTimeout(()=>{ if(statusEl.textContent===`"${name}" geladen.`) statusEl.textContent=''; }, 4000);
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = 'Er ging iets mis bij het laden.';
+  }
+}
+
+async function saveCurrentProject(name){
+  const statusEl = document.getElementById('projectStatus');
+  if(!name || !name.trim()){
+    statusEl.textContent = 'Geef eerst een naam voor dit project.';
+    return;
+  }
+  name = name.trim();
+  try{
+    await dbSaveProject(name, serializeProject());
+    currentProjectName = name;
+    document.getElementById('updateProjectBtn').style.display = '';
+    renderSavedProjectsList();
+    statusEl.textContent = `"${name}" opgeslagen.`;
+    setTimeout(()=>{ if(statusEl.textContent===`"${name}" opgeslagen.`) statusEl.textContent=''; }, 4000);
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = 'Opslaan is mislukt: ' + (err && err.message ? err.message : err);
+  }
+}
+
+document.getElementById('saveProjectBtn').addEventListener('click', ()=>{
+  saveCurrentProject(document.getElementById('projectNameInput').value);
+});
+document.getElementById('updateProjectBtn').addEventListener('click', ()=>{
+  saveCurrentProject(currentProjectName || document.getElementById('projectNameInput').value);
+});
+
+// Secondary/backup path — still available, but the in-browser database
+// above is now the primary way to save (no file juggling needed).
+document.getElementById('exportProjectFileBtn').addEventListener('click', ()=>{
+  const data = serializeProject();
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const stamp = new Date().toISOString().slice(0,10);
+  const name = (document.getElementById('projectNameInput').value || 'kronkellijn-project').trim().replace(/[^\w\-]+/g,'-');
+  downloadBlob(blob, `${name}-${stamp}.json`);
+});
+document.getElementById('openProjectFileBtn').addEventListener('click', ()=>{
+  document.getElementById('projectFileInput').click();
+});
+document.getElementById('projectFileInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  const statusEl = document.getElementById('projectStatus');
+  statusEl.textContent = 'Back-upbestand laden…';
+  try{
+    const data = JSON.parse(await file.text());
+    await applyProjectData(data);
+    statusEl.textContent = 'Back-up geladen — geef het hierboven een naam en druk op Opslaan om het in de browser te bewaren.';
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = 'Kon dit bestand niet lezen — is het een opgeslagen project?';
+  }
+});
+
+renderSavedProjectsList();
+</script>
+</body>
+</html>

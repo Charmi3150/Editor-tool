@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack Reel Tool</title>
+<style>
+  :root{
+    --bg:#0d0e10;
+    --panel:#17181b;
+    --line:#2a2c31;
+    --accent:#7587af;
+    --accent-dim:#616f90;
+    --text:#f2f2ee;
+    --text-dim:#8c8f94;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Courier New', ui-monospace, monospace;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  h1{
+    font-size:20px;
+    letter-spacing:0.5px;
+    margin:0 0 4px;
+    display:flex;align-items:center;gap:10px;
+  }
+  h1 .tag{
+    font-size:11px;
+    color:var(--bg);
+    background:var(--accent);
+    padding:2px 8px;
+    border-radius:2px;
+    font-weight:bold;
+  }
+  .sub{color:var(--text-dim);font-size:13px;margin:0 0 24px;}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .panel h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--accent);
+    margin:0 0 14px;
+  }
+  .row{display:flex;gap:10px;margin-bottom:10px;}
+  .field{flex:1;}
+  label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:5px;}
+  input[type=number]{
+    width:100%;
+    background:#0d0e10;
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:9px 10px;
+    border-radius:3px;
+    font-family:inherit;
+    font-size:14px;
+  }
+  input[type=number]:focus{outline:none;border-color:var(--accent);}
+  .presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .preset-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .preset-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .slot2{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    border:1px dashed var(--line);
+    border-radius:3px;
+    padding:10px;
+    margin-bottom:8px;
+    background:#0d0e10;
+  }
+  .slot2.filled{border-style:solid;border-color:var(--line);}
+  .slot2 .n{
+    width:22px;height:22px;flex-shrink:0;margin-top:2px;
+    background:var(--line);color:var(--text);
+    font-size:11px;display:flex;align-items:center;justify-content:center;
+    border-radius:2px;
+  }
+  .slot2.filled .n{background:var(--accent);color:#0d0e10;}
+  .slot2-main{flex:1;min-width:0;}
+  .filerow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .filebtn{
+    background:transparent;border:1px solid var(--accent-dim);color:var(--accent);
+    font-size:11px;padding:6px 10px;border-radius:3px;cursor:pointer;font-family:inherit;
+    flex-shrink:0;
+  }
+  .fname{font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dims{display:flex;align-items:center;gap:6px;}
+  .dims input[type=number]{
+    width:72px;flex:none;
+    background:#151619;border:1px solid var(--line);color:var(--text);
+    padding:7px 8px;border-radius:3px;font-family:inherit;font-size:12px;
+  }
+  .dims span.x{color:var(--text-dim);font-size:11px;}
+  .dims span.px{color:var(--text-dim);font-size:10px;}
+  .removeBtn{
+    background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:14px;
+    flex-shrink:0;font-family:inherit;
+  }
+  .removeBtn:hover{border-color:#ff7a6b;color:#ff7a6b;}
+
+  #addRowBtn{
+    width:100%;
+    background:transparent;
+    border:1px dashed var(--accent-dim);
+    color:var(--accent);
+    padding:10px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:12px;
+    margin-top:4px;
+  }
+
+  .totalinfo{font-size:11px;color:var(--text-dim);margin-top:10px;}
+  .totalinfo b{color:var(--accent);}
+
+  button.primary{
+    width:100%;
+    background:var(--accent);
+    color:#0d0e10;
+    border:none;
+    padding:13px;
+    font-weight:bold;
+    font-size:13px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  button.primary:disabled{background:var(--line);color:var(--text-dim);cursor:not-allowed;}
+  button.primary:not(:disabled):hover{background:#adbcdd;}
+
+  button.secondary{
+    width:100%;
+    background:transparent;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    padding:11px;
+    font-size:12px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:inherit;
+    margin-top:8px;
+  }
+  button.secondary:disabled{border-color:var(--line);color:var(--text-dim);cursor:not-allowed;}
+
+  #stage{
+    display:flex;
+    justify-content:center;
+    background:#000;
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:12px;
+    position:relative;
+    touch-action:none;
+  }
+  #canvas{max-width:100%;max-height:70vh;display:block;background:#000;touch-action:none;}
+
+  #hiddenVideos{
+    position:absolute;
+    width:1px;height:1px;
+    overflow:hidden;
+    opacity:0.01;
+    pointer-events:none;
+    top:0;left:0;
+  }
+
+  .status{
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    margin:8px 0 0;
+    min-height:16px;
+  }
+  .status.active{color:var(--accent);}
+  .status.err{color:#ff7a6b;}
+
+  .zoomrow{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:8px;
+    font-size:11px;
+    color:var(--text-dim);
+  }
+  .zoomrow span.lbl{width:44px;flex-shrink:0;}
+  .zoomrow input[type=range]{flex:1;accent-color:var(--accent);}
+  .zoomrow button{
+    background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    font-size:10px;padding:4px 7px;border-radius:3px;cursor:pointer;font-family:inherit;
+  }
+
+  #resultBox{display:none;margin-top:14px;}
+  #resultVideo{width:100%;border-radius:4px;display:block;background:#000;}
+  .save-hint{
+    font-size:12px;color:var(--accent);
+    background:rgba(117,135,175,0.08);
+    border:1px solid var(--accent-dim);
+    border-radius:3px;
+    padding:10px;
+    margin-top:10px;
+    line-height:1.5;
+  }
+
+  #downloadLink{
+    display:none;
+    text-align:center;
+    background:var(--accent);
+    color:#0d0e10;
+    text-decoration:none;
+    font-weight:bold;
+    padding:13px;
+    border-radius:3px;
+    margin-top:10px;
+    font-size:13px;
+  }
+
+  .hint{font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:10px;}
+  .filmline{
+    height:1px;
+    background:repeating-linear-gradient(90deg,var(--line) 0 6px, transparent 6px 12px);
+    margin:20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);text-decoration:none;border:1px solid var(--line);padding:5px 10px;border-radius:3px;margin-bottom:14px;font-family:inherit;">← Carmi</a>
+  <h1>Stack Reel <span class="tag">Carmi</span></h1>
+  <p class="sub">Zet meerdere video's boven elkaar in één canvas. Voeg per video een eigen breedte en hoogte in pixels toe, sleep om te verschuiven, zoom om uit te snijden.</p>
+
+  <div class="panel">
+    <h2>1 — Uitvoerbreedte</h2>
+    <div class="field">
+      <label>Breedte (px)</label>
+      <input type="number" id="canvasW" value="1080" min="100" step="1">
+    </div>
+    <div class="presets">
+      <button class="preset-btn" data-w="1080">1080px</button>
+      <button class="preset-btn" data-w="720">720px</button>
+      <button class="preset-btn" data-w="1440">1440px</button>
+    </div>
+    <div class="hint">Dit is de breedte van het eindresultaat. De totale hoogte wordt automatisch de som van de hoogtes die je hieronder per video ingeeft.</div>
+  </div>
+
+  <div class="panel">
+    <h2>2 — Video's</h2>
+    <div id="slots"></div>
+    <button id="addRowBtn">+ Video toevoegen</button>
+    <div class="totalinfo" id="totalInfo"></div>
+  </div>
+
+  <button class="primary" id="buildBtn" disabled>Live voorbeeld bouwen</button>
+
+  <div class="panel" id="stagePanel" style="display:none;">
+    <h2>Live voorbeeld</h2>
+    <div id="stage"><canvas id="canvas"></canvas></div>
+    <div id="hiddenVideos"></div>
+
+    <button class="secondary" id="playToggle">▶ Beweging tonen</button>
+    <div id="perfWarning" class="hint" style="display:none;color:#ff7a6b;"></div>
+
+    <div id="zoomControls"></div>
+    <div class="hint" style="margin-top:0;">Sleep op de video zelf om te verschuiven binnen zijn vak. Gebruik de schuiver om in/uit te zoomen.</div>
+
+    <div class="zoomrow" style="margin-top:14px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);">
+        <input type="checkbox" id="audioToggle" style="accent-color:var(--accent);">
+        Geluid meenemen (trager bij veel video's)
+      </label>
+    </div>
+
+    <button class="primary" id="exportBtn" style="margin-top:8px;">Exporteren als video</button>
+    <div class="status" id="status"></div>
+
+    <div id="resultBox">
+      <video id="resultVideo" controls playsinline></video>
+      <div class="save-hint">📲 Tik op de video hierboven, houd ingedrukt en kies <b>"Bewaar video"</b> om hem in je camerarol te zetten. Werkt dat niet, gebruik dan de downloadknop.</div>
+      <a id="downloadLink">⬇ Download reel</a>
+    </div>
+  </div>
+
+  <div class="filmline"></div>
+  <div class="hint">Tip: gebruik video's van vergelijkbare lengte. Kortere video's lussen automatisch door tot de langste is afgelopen.</div>
+</div>
+
+<script>
+const canvasW = document.getElementById('canvasW');
+const slotsEl = document.getElementById('slots');
+const addRowBtn = document.getElementById('addRowBtn');
+const totalInfo = document.getElementById('totalInfo');
+const buildBtn = document.getElementById('buildBtn');
+const stagePanel = document.getElementById('stagePanel');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const hiddenVideos = document.getElementById('hiddenVideos');
+const zoomControls = document.getElementById('zoomControls');
+const exportBtn = document.getElementById('exportBtn');
+const statusEl = document.getElementById('status');
+const resultBox = document.getElementById('resultBox');
+const resultVideo = document.getElementById('resultVideo');
+const downloadLink = document.getElementById('downloadLink');
+
+// dynamic list of row definitions: {file, width, height}
+let rows = [ { file:null, width: parseInt(canvasW.value)||1080, height:400 } ];
+let clips = []; // {el, baseScale, userScale, dx, dy, stripY, stripH, boxX, boxW}
+let liveLoopId = null;
+let recorder = null;
+let audioCtx = null;
+let audioSourceMap = new WeakMap();
+let dragging = null;
+
+document.querySelectorAll('.preset-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    canvasW.value = b.dataset.w;
+    resetBuild();
+  });
+});
+canvasW.addEventListener('input', resetBuild);
+
+addRowBtn.addEventListener('click', ()=>{
+  const last = rows[rows.length-1];
+  rows.push({ file:null, width: last ? last.width : (parseInt(canvasW.value)||1080), height: last ? last.height : 400 });
+  renderRows();
+  resetBuild();
+});
+
+function removeRow(i){
+  if(rows.length<=1) return;
+  rows.splice(i,1);
+  renderRows();
+  resetBuild();
+}
+
+function renderRows(){
+  slotsEl.innerHTML = '';
+  rows.forEach((r,i)=>{
+    const slot = document.createElement('div');
+    slot.className = 'slot2' + (r.file ? ' filled' : '');
+    slot.innerHTML = `
+      <div class="n">${i+1}</div>
+      <div class="slot2-main">
+        <div class="filerow">
+          <button type="button" class="filebtn">Kies bestand</button>
+          <span class="fname">${r.file ? r.file.name : 'geen bestand gekozen'}</span>
+          <input type="file" accept="video/*" style="display:none">
+        </div>
+        <div class="dims">
+          <input type="number" class="wIn" value="${r.width}" min="20" step="1"><span class="x">×</span>
+          <input type="number" class="hIn" value="${r.height}" min="20" step="1"><span class="px">px</span>
+        </div>
+      </div>
+      <button type="button" class="removeBtn">×</button>
+    `;
+    slotsEl.appendChild(slot);
+
+    const fileInput = slot.querySelector('input[type=file]');
+    slot.querySelector('.filebtn').addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(f){
+        r.file = f;
+        renderRows();
+        resetBuild();
+      }
+    });
+    slot.querySelector('.wIn').addEventListener('input', (e)=>{
+      r.width = parseInt(e.target.value) || r.width;
+      updateTotalInfo();
+      resetBuild();
+    });
+    slot.querySelector('.hIn').addEventListener('input', (e)=>{
+      r.height = parseInt(e.target.value) || r.height;
+      updateTotalInfo();
+      resetBuild();
+    });
+    slot.querySelector('.removeBtn').addEventListener('click', ()=> removeRow(i));
+  });
+  updateTotalInfo();
+  buildBtn.disabled = !rows.some(r=>r.file);
+}
+
+function updateTotalInfo(){
+  const withFile = rows.filter(r=>r.file);
+  const totalH = withFile.reduce((s,r)=> s + (r.height||0), 0);
+  totalInfo.innerHTML = withFile.length
+    ? `Canvas wordt <b>${canvasW.value}px</b> breed × <b>${totalH}px</b> hoog (som van ${withFile.length} video's).`
+    : `Voeg minstens 1 video toe.`;
+}
+
+function resetBuild(){
+  stagePanel.style.display='none';
+  buildBtn.disabled = !rows.some(r=>r.file);
+  statusEl.textContent='';
+  statusEl.className='status';
+  resultBox.style.display='none';
+  stopLiveLoop();
+  hiddenVideos.innerHTML='';
+  clips = [];
+}
+
+function stopLiveLoop(){
+  previewPlaying = false;
+  if(liveLoopId){ cancelAnimationFrame(liveLoopId); liveLoopId=null; }
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  if(recorder && recorder.state==='recording'){ try{ recorder.stop(); }catch(e){} }
+}
+
+renderRows();
+
+buildBtn.addEventListener('click', async ()=>{
+  buildBtn.disabled = true;
+  buildBtn.textContent = 'Laden...';
+  statusEl.className='status';
+  statusEl.textContent='';
+
+  try{
+    const activeRows = rows.filter(r=>r.file);
+    canvas.width = parseInt(canvasW.value) || 1080;
+    canvas.height = activeRows.reduce((s,r)=> s + (r.height||0), 0);
+
+    hiddenVideos.innerHTML='';
+    const els = await Promise.all(activeRows.map(r => loadVideo(r.file)));
+
+    let cursorY = 0;
+    clips = els.map((el,i)=>{
+      const r = activeRows[i];
+      const stripY = cursorY;
+      const stripH = r.height;
+      const boxW = r.width;
+      const boxX = (canvas.width - boxW)/2;
+      cursorY += stripH;
+      const c = { el, userScale:1, stripY, stripH, boxX, boxW };
+      computeCover(c);
+      return c;
+    });
+
+    stagePanel.style.display='block';
+    buildBtn.disabled = false;
+    buildBtn.textContent = 'Live voorbeeld bouwen';
+    buildZoomControls();
+    drawStaticFrame();
+    setupDrag();
+
+    const perfWarning = document.getElementById('perfWarning');
+    if(clips.length > 5){
+      perfWarning.style.display='block';
+      perfWarning.innerHTML = `⚠ iPhones kunnen doorgaans maar zo'n 4–5 video's tegelijk decoderen. Bij ${clips.length} video's zal export waarschijnlijk vastlopen of flikkeren.<br><br><b>Werk in groepen:</b> maak eerst aparte exports van groepjes van max. 5 video's. Gebruik daarna die geëxporteerde bestanden opnieuw als "video" in een nieuwe ronde, en exporteer die laatste keer.`;
+    } else {
+      perfWarning.style.display='none';
+    }
+
+    stagePanel.scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(err){
+    statusEl.className='status err';
+    statusEl.textContent = 'Kon video\'s niet laden: ' + err.message;
+    buildBtn.disabled = false;
+    buildBtn.textContent = 'Live voorbeeld bouwen';
+  }
+});
+
+function loadVideo(file){
+  return new Promise((resolve, reject)=>{
+    const v = document.createElement('video');
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline','');
+    v.loop = true;
+    v.preload = 'auto';
+    v.src = URL.createObjectURL(file);
+    hiddenVideos.appendChild(v); // must be in the DOM for reliable decode on iOS
+
+    let done = false;
+    const finish = ()=>{
+      if(done) return;
+      done = true;
+      resolve(v);
+    };
+    v.addEventListener('loadedmetadata', ()=>{
+      // force a frame to decode
+      const p = v.play();
+      if(p && p.catch) p.catch(()=>{});
+      setTimeout(()=>{ try{ v.pause(); }catch(e){} finish(); }, 60);
+    }, {once:true});
+    v.addEventListener('error', ()=> reject(new Error(file.name)), {once:true});
+    setTimeout(finish, 4000); // failsafe
+  });
+}
+
+function computeCover(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  c.baseScale = Math.max(c.boxW / vw, c.stripH / vh);
+  recenter(c);
+}
+
+function recenter(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  const scale = c.baseScale * c.userScale;
+  const dw = vw*scale, dh = vh*scale;
+  c.dx = c.boxX + (c.boxW - dw)/2;
+  c.dy = c.stripY + (c.stripH - dh)/2;
+}
+
+function clampClip(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  const scale = c.baseScale * c.userScale;
+  const dw = vw*scale, dh = vh*scale;
+  const minDx = c.boxX + c.boxW - dw, maxDx = c.boxX;
+  const minDy = c.stripY + c.stripH - dh, maxDy = c.stripY;
+  c.dx = Math.min(maxDx, Math.max(minDx, c.dx));
+  c.dy = Math.min(maxDy, Math.max(minDy, c.dy));
+}
+
+function drawFrame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  clips.forEach(c=>{
+    const vw = c.el.videoWidth, vh = c.el.videoHeight;
+    if(!vw||!vh) return;
+    const scale = c.baseScale * c.userScale;
+    const dw = vw*scale, dh = vh*scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(c.boxX, c.stripY, c.boxW, c.stripH);
+    ctx.clip();
+    ctx.drawImage(c.el, c.dx, c.dy, dw, dh);
+    ctx.restore();
+  });
+}
+
+function drawStaticFrame(){
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  drawFrame();
+}
+
+let previewPlaying = false;
+function startLivePreview(){
+  previewPlaying = true;
+  playToggle.textContent = '⏸ Beweging stoppen';
+  clips.forEach(c=>{
+    c.el.currentTime = 0;
+    const p = c.el.play();
+    if(p && p.catch) p.catch(()=>{});
+  });
+  const loop = ()=>{
+    drawFrame();
+    if(previewPlaying) liveLoopId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+function stopPreviewPlayback(){
+  previewPlaying = false;
+  playToggle.textContent = '▶ Beweging tonen';
+  if(liveLoopId){ cancelAnimationFrame(liveLoopId); liveLoopId=null; }
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  drawFrame();
+}
+
+const playToggle = document.getElementById('playToggle');
+playToggle.addEventListener('click', ()=>{
+  if(previewPlaying) stopPreviewPlayback();
+  else startLivePreview();
+});
+
+function buildZoomControls(){
+  zoomControls.innerHTML='';
+  clips.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className='zoomrow';
+    row.innerHTML = `
+      <span class="lbl">Video ${i+1}</span>
+      <input type="range" min="100" max="300" value="100" data-idx="${i}">
+      <button data-reset="${i}">reset</button>
+    `;
+    zoomControls.appendChild(row);
+    row.querySelector('input').addEventListener('input', (e)=>{
+      c.userScale = parseInt(e.target.value)/100;
+      recenter(c);
+      if(!previewPlaying) drawFrame();
+    });
+    row.querySelector('button').addEventListener('click', ()=>{
+      c.userScale = 1;
+      row.querySelector('input').value = 100;
+      recenter(c);
+      if(!previewPlaying) drawFrame();
+    });
+  });
+}
+
+function setupDrag(){
+  canvas.onpointerdown = (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const scaleFactor = canvas.width / rect.width;
+    const cy = (e.clientY - rect.top) * scaleFactor;
+    const idx = clips.findIndex(c => cy >= c.stripY && cy < c.stripY + c.stripH);
+    if(idx===-1) return;
+    dragging = {
+      index: idx,
+      startClientX: e.clientX, startClientY: e.clientY,
+      startDx: clips[idx].dx, startDy: clips[idx].dy,
+      scaleFactor
+    };
+    canvas.setPointerCapture(e.pointerId);
+  };
+  canvas.onpointermove = (e)=>{
+    if(!dragging) return;
+    const c = clips[dragging.index];
+    const dxPix = (e.clientX - dragging.startClientX) * dragging.scaleFactor;
+    const dyPix = (e.clientY - dragging.startClientY) * dragging.scaleFactor;
+    c.dx = dragging.startDx + dxPix;
+    c.dy = dragging.startDy + dyPix;
+    clampClip(c);
+    if(!previewPlaying) drawFrame();
+  };
+  const end = ()=>{ dragging=null; };
+  canvas.onpointerup = end;
+  canvas.onpointercancel = end;
+}
+
+function pickMimeType(){
+  const candidates = [
+    'video/mp4;codecs=h264,aac',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  return candidates.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+}
+
+exportBtn.addEventListener('click', async ()=>{
+  if(!window.MediaRecorder){
+    statusEl.className='status err';
+    statusEl.textContent='Deze browser ondersteunt geen video-opname.';
+    return;
+  }
+  exportBtn.disabled = true;
+  resultBox.style.display='none';
+  statusEl.className='status active';
+  statusEl.textContent = 'Bezig met exporteren...';
+
+  try{
+    const wantAudio = document.getElementById('audioToggle').checked;
+    let audioTracks = [];
+    if(wantAudio){
+      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended') await audioCtx.resume();
+
+      const dest = audioCtx.createMediaStreamDestination();
+      clips.forEach(c=>{
+        try{
+          let src = audioSourceMap.get(c.el);
+          if(!src){
+            src = audioCtx.createMediaElementSource(c.el);
+            audioSourceMap.set(c.el, src);
+          }
+          src.connect(dest);
+        }catch(e){ /* no audio track or already routed */ }
+      });
+      audioTracks = dest.stream.getAudioTracks();
+    }
+
+    const fps = clips.length > 8 ? 20 : 30;
+    const canvasStream = canvas.captureStream(fps);
+    const combined = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioTracks
+    ]);
+
+    const mimeType = pickMimeType();
+    if(!mimeType) throw new Error('geen ondersteund video-formaat gevonden');
+
+    // push bitrate as high as reasonably possible to limit re-encode quality loss
+    const pixelCount = canvas.width * canvas.height;
+    const videoBitsPerSecond = Math.min(20_000_000, Math.max(8_000_000, Math.round(pixelCount * 0.12)));
+
+    const chunks = [];
+    recorder = new MediaRecorder(combined, {mimeType, videoBitsPerSecond});
+    recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+    recorder.onerror = (e) => {
+      statusEl.className='status err';
+      statusEl.textContent = 'Opname-fout: ' + (e.error ? e.error.message : 'onbekend');
+      exportBtn.disabled = false;
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, {type: mimeType.split(';')[0]});
+      const url = URL.createObjectURL(blob);
+      resultVideo.src = url;
+      resultBox.style.display = 'block';
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      downloadLink.href = url;
+      downloadLink.download = 'stacked-reel.' + ext;
+      downloadLink.style.display = 'block';
+      statusEl.className='status';
+      statusEl.textContent = 'Klaar.';
+      exportBtn.disabled = false;
+      drawStaticFrame();
+    };
+
+    stopLiveLoop();
+    clips.forEach(c=>{ c.el.currentTime = 0; const p=c.el.play(); if(p&&p.catch) p.catch(()=>{}); });
+    recorder.start();
+
+    const rec = ()=>{ drawFrame(); if(recorder.state==='recording') liveLoopId = requestAnimationFrame(rec); };
+    rec();
+
+    const longest = clips.reduce((a,b)=> (b.el.duration||0) > (a.el.duration||0) ? b : a).el;
+    const dur = longest.duration || 0;
+    const check = setInterval(()=>{
+      if(recorder.state!=='recording'){ clearInterval(check); return; }
+      const elapsed = longest.currentTime || 0;
+      statusEl.textContent = `Bezig met exporteren... ${elapsed.toFixed(1)}s / ${dur.toFixed(1)}s`;
+      if(elapsed >= dur - 0.05){
+        clearInterval(check);
+        recorder.stop();
+      }
+    }, 150);
+  }catch(err){
+    statusEl.className='status err';
+    statusEl.textContent = 'Export mislukt: ' + err.message;
+    exportBtn.disabled = false;
+    drawStaticFrame();
+  }
+});
+</script>
+</body>
+</html>
