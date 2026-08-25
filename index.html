@@ -1,1007 +1,216 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>De Trekking — Carmi</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Editor</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#88b2b4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Editor">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; padding: 0; }
-  * { box-sizing: border-box; }
+  :root{
+    --bg:#f6f1e9;
+    --ink:#3a3245;
+    --muted:#a29c9f;
+    --white:#ffffff;
+
+    --orange:#f1b95c;
+    --orange-2:#cd9d4e;
+    --rose:#deaeba;
+    --rose-2:#bd949e;
+    --blue:#8a9fce;
+    --blue-2:#7587af;
+    --teal:#a0d2d4;
+    --teal-2:#88b2b4;
+    --purple:#b79fd1;
+    --purple-2:#9884b8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:38px 20px 60px;
+  }
+  .wrap{max-width:460px;margin:0 auto;}
+
+  .brandblock{text-align:center;margin-bottom:26px;}
+  h1{
+    font-family:'Playfair Display', Georgia, serif;
+    font-size:44px;
+    font-weight:700;
+    color:var(--ink);
+    margin:0 0 2px;
+    letter-spacing:0.5px;
+  }
+  .tagline{
+    font-size:13px;
+    letter-spacing:4px;
+    color:#b7b3c4;
+    text-transform:uppercase;
+    margin:0 0 14px;
+    font-weight:600;
+  }
+  .status{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:#8f8c9e;
+    background:rgba(255,255,255,0.5);
+    padding:6px 14px;
+    border-radius:20px;
+  }
+  .status .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#5fbf7a;
+    box-shadow:0 0 0 3px rgba(95,191,122,0.2);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:28px;
+  }
+  a.tile{
+    text-decoration:none;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:10px;
+    padding:26px 14px;
+    border-radius:18px;
+    min-height:150px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  a.tile:active{transform:scale(0.97);}
+  a.tile.orange{
+    background:linear-gradient(160deg, var(--orange) 0%, var(--orange-2) 100%);
+    box-shadow:0 6px 16px rgba(205,157,78,0.30);
+  }
+  a.tile.rose{
+    background:linear-gradient(160deg, var(--rose) 0%, var(--rose-2) 100%);
+    box-shadow:0 6px 16px rgba(189,148,158,0.32);
+  }
+  a.tile.blue{
+    background:linear-gradient(160deg, var(--blue) 0%, var(--blue-2) 100%);
+    box-shadow:0 6px 16px rgba(117,135,175,0.32);
+  }
+  a.tile.teal{
+    background:linear-gradient(160deg, var(--teal) 0%, var(--teal-2) 100%);
+    box-shadow:0 6px 16px rgba(136,178,180,0.32);
+  }
+  a.tile.purple{
+    background:linear-gradient(160deg, var(--purple) 0%, var(--purple-2) 100%);
+    box-shadow:0 6px 16px rgba(152,132,184,0.32);
+    grid-column:1 / -1;
+    flex-direction:row;
+    justify-content:flex-start;
+    text-align:left;
+    gap:16px;
+    min-height:auto;
+    padding:20px 22px;
+  }
+  a.tile.purple .icon{margin:0;}
+  .tile .icon{
+    width:44px;height:44px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+    background:rgba(255,255,255,0.45);
+    border-radius:12px;
+    flex-shrink:0;
+  }
+  .tile .icon svg{width:22px;height:22px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .tile .name{
+    color:var(--ink);
+    font-weight:700;
+    font-size:15.5px;
+    letter-spacing:0.2px;
+  }
+  .tile .desc{
+    color:rgba(58,50,69,0.72);
+    font-size:11.5px;
+    line-height:1.4;
+  }
+
+  footer{
+    text-align:center;
+    margin-top:36px;
+    font-size:11.5px;
+    color:#b3b0c0;
+    line-height:1.6;
+  }
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div class="wrap">
 
-<script type="text/babel" data-presets="react">
-const { useState, useRef, useEffect, useCallback } = React;
+  <div class="brandblock">
+    <h1>Editor</h1>
+    <div class="tagline">Tools</div>
+    <div class="status"><span class="dot"></span> Alle tools in één overzicht</div>
+  </div>
 
-/* ---------------------------------------------------------
-   DE TREKKING — Carmi giveaway winner picker
---------------------------------------------------------- */
+  <div class="grid">
 
-const DEFAULT_THEME = { accent: "#3F3F46", appBg: "#F4F4F5" };
-const NEUTRAL_LINE = "#D4D4D8";
-const SURFACE = "#FFFFFF";
-const DUMMY_NAMES = ["voorbeeld_anne", "voorbeeld_lars", "voorbeeld_mila", "voorbeeld_finn", "voorbeeld_zoe", "voorbeeld_noah"];
-const CYCLE_SPEED_LEVELS = [
-  { min: 22, max: 70 },
-  { min: 35, max: 130 },
-  { min: 55, max: 220 },
-  { min: 90, max: 380 },
-  { min: 140, max: 600 },
-];
-const CYCLE_SPEED_LABELS = ["Zeer snel", "Snel", "Normaal", "Traag", "Zeer traag"];
-
-const FESTIVE_CONFETTI_COLORS = ["#F94144", "#F3722C", "#F9C74F", "#90BE6D", "#43AA8B", "#4D908E", "#577590", "#F8961E", "#EF476F", "#06D6A0", "#118AB2", "#FFD166"];
-const FONT_GROUPS = [
-  { label: "Speels", fonts: ["Fredoka", "Baloo 2", "Pacifico", "Caveat", "Kalam"] },
-  { label: "Uitgesproken", fonts: ["Alfa Slab One", "Bungee", "Anton", "Passion One", "Righteous"] },
-  { label: "Elegant", fonts: ["Playfair Display", "Cormorant Garamond", "Prata", "DM Serif Display"] },
-  { label: "Strak", fonts: ["Poppins", "Work Sans", "Space Grotesk", "Montserrat", "Inter", "Outfit"] },
-];
-
-function loadGoogleFont(family) {
-  const id = "gf-" + family.replace(/\s+/g, "-");
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;500;600;700;800;900&display=swap`;
-  document.head.appendChild(link);
-}
-function shade(hex, percent) {
-  const f = parseInt(hex.slice(1), 16);
-  const t = percent < 0 ? 0 : 255;
-  const p = percent < 0 ? percent * -1 : percent;
-  const R = f >> 16, G = (f >> 8) & 0x00ff, B = f & 0x0000ff;
-  return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1);
-}
-function getContrastText(hex) {
-  const c = hex.replace("#", "");
-  const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 150 ? "#18181B" : "#FFFFFF";
-}
-function buildWheelPalette(accent) {
-  return [accent, "#E4E4E7", shade(accent, -0.35), "#FAFAFA", shade(accent, 0.35), "#A1A1AA"];
-}
-function parseEntrants(raw) {
-  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const junk = new Set([
-    "beantwoorden", "reply", "vind ik leuk", "like", "meer antwoorden weergeven",
-    "meer antwoorden bekijken", "see translation", "vertaling bekijken", "volgen",
-    "follow", "verzonden", "translated", "bewerkt", "edited", "author", "auteur",
-    "geverifieerd", "verified",
-  ]);
-  const timeAgoRe = /^\d+\s?(u|uur|d|dag|dagen|w|week|weken|m|min|minuten|min\.|j|jaar|jr|s|sec|sec\.)\.?$/i;
-  const usernameRe = /^@?[a-zA-Z0-9_.]{2,30}$/;
-  const pureNumberRe = /^\d+$/;
-  const found = [];
-  for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (junk.has(lower)) continue;
-    if (timeAgoRe.test(line)) continue;
-    const clean = line.replace(/^@/, "");
-    if (usernameRe.test(line) && !pureNumberRe.test(clean)) found.push(clean);
-  }
-  const seen = new Map();
-  for (const u of found) {
-    const key = u.toLowerCase();
-    if (!seen.has(key)) seen.set(key, u);
-  }
-  return Array.from(seen.values());
-}
-function easeOutQuint(t) { return 1 - Math.pow(1 - t, 5); }
-function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-function dist2(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-function mid2(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
-function rgbToHex(r, g, b) { return "#" + [r, g, b].map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, "0")).join(""); }
-function extractPalette(img, count = 8) {
-  const size = 60;
-  const c = document.createElement("canvas");
-  c.width = size; c.height = size;
-  const cctx = c.getContext("2d");
-  cctx.drawImage(img, 0, 0, size, size);
-  let data;
-  try { data = cctx.getImageData(0, 0, size, size).data; } catch (e) { return []; }
-  const buckets = {};
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a < 128) continue;
-    const qr = Math.round(data[i] / 24) * 24, qg = Math.round(data[i + 1] / 24) * 24, qb = Math.round(data[i + 2] / 24) * 24;
-    const key = qr + "," + qg + "," + qb;
-    buckets[key] = (buckets[key] || 0) + 1;
-  }
-  const sorted = Object.entries(buckets).sort((a, b) => b[1] - a[1]);
-  const colors = [];
-  for (const [key] of sorted) {
-    const [r, g, b] = key.split(",").map(Number);
-    colors.push(rgbToHex(r, g, b));
-    if (colors.length >= count) break;
-  }
-  return colors;
-}
-
-function Perforation() {
-  return (
-    <div className="w-full h-3 shrink-0" style={{
-      backgroundImage: `radial-gradient(circle at 9px 6px, ${SURFACE} 5px, transparent 5.5px)`,
-      backgroundSize: "18px 12px", backgroundPosition: "center",
-    }} />
-  );
-}
-function SectionLabel({ n, children, accent }) {
-  return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-xs font-bold px-2 py-0.5 rounded-sm" style={{ backgroundColor: accent, color: getContrastText(accent), fontFamily: "'Space Grotesk', sans-serif" }}>N° {n}</span>
-      <h3 className="text-base tracking-wide font-semibold" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>{children}</h3>
-    </div>
-  );
-}
-function Field({ label, children }) {
-  return (
-    <div className="mb-4">
-      <label className="block text-xs font-semibold mb-1" style={{ color: "#3F3F46" }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function PlateEditor({ cfg, setCfg, accent, imagePalette }) {
-  return (
-    <div>
-      <label className="flex items-center gap-2 mb-3 text-sm font-semibold" style={{ color: "#3F3F46" }}>
-        <input type="checkbox" checked={cfg.enabled} onChange={(e) => setCfg((p) => ({ ...p, enabled: e.target.checked }))} style={{ accentColor: accent }} />
-        Kader tonen
-      </label>
-      {cfg.enabled && (
-        <React.Fragment>
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <Field label="Kleur"><input type="color" value={cfg.color} onChange={(e) => setCfg((p) => ({ ...p, color: e.target.value }))} className="w-full h-10 rounded-lg cursor-pointer" /></Field>
-            <Field label={`Dekking — ${Math.round(cfg.opacity * 100)}%`}>
-              <input type="range" min="5" max="100" step="5" value={Math.round(cfg.opacity * 100)} onChange={(e) => setCfg((p) => ({ ...p, opacity: Number(e.target.value) / 100 }))} className="w-full mt-2" style={{ accentColor: accent }} />
-            </Field>
-          </div>
-          {imagePalette.length > 0 ? (
-            <Field label="Uit je achtergrondfoto">
-              <div className="flex flex-wrap gap-2">
-                {imagePalette.map((c, i) => (
-                  <button key={c + i} onClick={() => setCfg((p) => ({ ...p, color: c }))} title={c}
-                    className="w-8 h-8 rounded-full"
-                    style={{ backgroundColor: c, border: cfg.color.toLowerCase() === c.toLowerCase() ? `3px solid ${accent}` : "2px solid rgba(0,0,0,0.15)" }} />
-                ))}
-              </div>
-            </Field>
-          ) : (
-            <p className="text-[11px] mb-3" style={{ color: "#A1A1AA" }}>Kies een achtergrondfoto om kleuren uit de foto voor te stellen.</p>
-          )}
-          <Field label={`Formaat — ${Math.round(cfg.scale * 100)}%`}>
-            <input type="range" min="40" max="220" step="5" value={Math.round(cfg.scale * 100)} onChange={(e) => setCfg((p) => ({ ...p, scale: Number(e.target.value) / 100 }))} className="w-full" style={{ accentColor: accent }} />
-          </Field>
-        </React.Fragment>
-      )}
-    </div>
-  );
-}
-
-function App() {
-  const [theme, setTheme] = useState(DEFAULT_THEME);
-  const [showEntrantsModal, setShowEntrantsModal] = useState(false);
-
-  // Entrants
-  const [rawComments, setRawComments] = useState("");
-  const [entrants, setEntrants] = useState([]);
-  const [manualAdd, setManualAdd] = useState("");
-  const [processed, setProcessed] = useState(false);
-
-  // Stage theming
-  const [giveawayName, setGiveawayName] = useState("");
-  const [bgImage, setBgImage] = useState(null);
-  const [bgColor, setBgColor] = useState("#FAFAFA");
-  const [fontColor, setFontColor] = useState("#18181B");
-  const [fontFamily, setFontFamily] = useState("Space Grotesk");
-  const [method, setMethod] = useState("wheel");
-  const [winnerCount, setWinnerCount] = useState(1);
-  const [cycleSpeedLevel, setCycleSpeedLevel] = useState(3);
-
-  // Plates ("kaders") behind text — apart voor naam-tijdens-trekking en winnaar
-  const [namePlate, setNamePlate] = useState({ enabled: true, color: "#000000", opacity: 0.32, scale: 1 });
-  const [winnerPlate, setWinnerPlate] = useState({ enabled: true, color: "#000000", opacity: 0.32, scale: 1 });
-
-  // Positie & grootte
-  const [namePos, setNamePos] = useState({ x: 50, y: 51 });
-  const [nameFontSize, setNameFontSize] = useState(96);
-  const [winnerPos, setWinnerPos] = useState({ x: 50, y: 76.5 });
-  const [winnerFontSize, setWinnerFontSize] = useState(84);
-  const [wheelPos, setWheelPos] = useState({ x: 50, y: 51 });
-  const [wheelRadius, setWheelRadius] = useState(420);
-
-  // Wheel colors
-  const [wheelColors, setWheelColors] = useState(() => buildWheelPalette(DEFAULT_THEME.accent));
-
-  // Kleuren uit achtergrondfoto + gestures op canvas
-  const [imagePalette, setImagePalette] = useState([]);
-  const [editTarget, setEditTarget] = useState("wheel"); // 'wheel' | 'name' | 'winner'
-  const [guides, setGuides] = useState({ x: null, y: null });
-
-  // Confetti
-  const [confettiType, setConfettiType] = useState("squares");
-  const [confettiColorMode, setConfettiColorMode] = useState("multi");
-  const [confettiColor, setConfettiColor] = useState(DEFAULT_THEME.accent);
-
-  // Draw state
-  const [pool, setPool] = useState([]);
-  const [winners, setWinners] = useState([]);
-  const [phase, setPhase] = useState("idle"); // idle | spinning | revealing | done
-  const [warning, setWarning] = useState("");
-
-  // Recording
-  const [videoUrl, setVideoUrl] = useState(null);
-  const [videoBlob, setVideoBlob] = useState(null);
-  const [videoMime, setVideoMime] = useState("");
-  const [canRecord, setCanRecord] = useState(true);
-
-  const canvasRef = useRef(null);
-  const stageRef = useRef(null);
-  const rafRef = useRef(null);
-  const recorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const bgImgElRef = useRef(null);
-  const confettiRef = useRef([]);
-  const winnersQueueRef = useRef({ target: 1, got: [] });
-  const pointersRef = useRef(new Map());
-  const gestureRef = useRef(null);
-
-  useEffect(() => {
-    setEditTarget((prev) => (prev === "winner" ? prev : method === "wheel" ? "wheel" : "name"));
-  }, [method]);
-
-  useEffect(() => { loadGoogleFont(fontFamily); }, [fontFamily]);
-
-  useEffect(() => {
-    if (bgImage) {
-      const img = new Image();
-      img.onload = () => { bgImgElRef.current = img; setImagePalette(extractPalette(img, 8)); drawIdleFrame(); };
-      img.src = bgImage;
-    } else { bgImgElRef.current = null; setImagePalette([]); drawIdleFrame(); }
-    // eslint-disable-next-line
-  }, [bgImage]);
-
-  useEffect(() => { drawIdleFrame();
-    // eslint-disable-next-line
-  }, [bgColor, fontColor, fontFamily, giveawayName, method, pool, winners, namePlate, winnerPlate, wheelColors, namePos, nameFontSize, winnerPos, winnerFontSize, wheelPos, wheelRadius, editTarget, guides]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && typeof window.MediaRecorder === "undefined") setCanRecord(false);
-  }, []);
-
-  function handleProcess() {
-    setEntrants(parseEntrants(rawComments));
-    setProcessed(true);
-  }
-  function removeEntrant(idx) { setEntrants((prev) => prev.filter((_, i) => i !== idx)); }
-  function addManual() {
-    const v = manualAdd.trim().replace(/^@/, "");
-    if (!v) return;
-    if (entrants.some((e) => e.toLowerCase() === v.toLowerCase())) { setManualAdd(""); return; }
-    setEntrants((prev) => [...prev, v]);
-    setManualAdd("");
-  }
-  function useListInTrekking() {
-    setPool(entrants); setWinners([]); setPhase("idle"); setVideoUrl(null); setVideoBlob(null);
-    setShowEntrantsModal(false);
-  }
-
-  const CW = 1080, CH = 1920;
-
-  function drawBackground(ctx) {
-    ctx.clearRect(0, 0, CW, CH);
-    if (bgImgElRef.current) {
-      const img = bgImgElRef.current;
-      const scale = Math.max(CW / img.width, CH / img.height);
-      const w = img.width * scale, h = img.height * scale;
-      ctx.drawImage(img, (CW - w) / 2, (CH - h) / 2, w, h);
-      ctx.fillStyle = "rgba(0,0,0,0.28)";
-      ctx.fillRect(0, 0, CW, CH);
-    } else { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, CW, CH); }
-  }
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(" ");
-    let line = "", lines = [];
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + " ";
-      if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + " "; }
-      else line = testLine;
-    }
-    lines.push(line);
-    const startY = y - ((lines.length - 1) * lineHeight) / 2;
-    lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + i * lineHeight));
-  }
-  function drawTitle(ctx) {
-    if (!giveawayName.trim()) return;
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.fillStyle = fontColor;
-    ctx.font = `700 76px "${fontFamily}", sans-serif`;
-    wrapText(ctx, giveawayName, CW / 2, 150, 920, 84);
-    ctx.restore();
-  }
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-  function drawPlate(ctx, cx, cy, w, h, r = 28, cfg) {
-    if (!cfg.enabled) return;
-    ctx.save();
-    ctx.globalAlpha = cfg.opacity;
-    ctx.fillStyle = cfg.color;
-    const sw = w * cfg.scale, sh = h * cfg.scale;
-    roundRect(ctx, cx - sw / 2, cy - sh / 2, sw, sh, r);
-    ctx.fill();
-    ctx.restore();
-  }
-  function truncateLabel(s, max = 14) { return s.length > max ? s.slice(0, max - 1) + "…" : s; }
-
-  function drawWheel(ctx, currentPool, angle) {
-    const cx = CW * (wheelPos.x / 100), cy = CH * (wheelPos.y / 100), radius = wheelRadius;
-    const n = Math.max(currentPool.length, 1);
-    const seg = (Math.PI * 2) / n;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(angle);
-    for (let i = 0; i < n; i++) {
-      const start = i * seg;
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, radius, start, start + seg); ctx.closePath();
-      ctx.fillStyle = wheelColors[i % wheelColors.length];
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.lineWidth = 2; ctx.stroke();
-      ctx.save();
-      ctx.rotate(start + seg / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = getContrastText(wheelColors[i % wheelColors.length]);
-      const fs = n > 30 ? 16 : n > 16 ? 20 : 26;
-      ctx.font = `600 ${fs}px "Work Sans", sans-serif`;
-      const labelAngle = ((start + seg / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      const flip = labelAngle > Math.PI / 2 && labelAngle < (Math.PI * 3) / 2;
-      if (flip) { ctx.rotate(Math.PI); ctx.textAlign = "left"; ctx.fillText(truncateLabel(currentPool[i], n > 24 ? 10 : 16), -(radius - 24), 8); }
-      else { ctx.fillText(truncateLabel(currentPool[i], n > 24 ? 10 : 16), radius - 24, 8); }
-      ctx.restore();
-    }
-    ctx.beginPath(); ctx.arc(0, 0, 58, 0, Math.PI * 2); ctx.fillStyle = "#FFFFFF"; ctx.fill();
-    ctx.lineWidth = 6; ctx.strokeStyle = "#18181B"; ctx.stroke();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(cx, cy - radius - 6);
-    ctx.beginPath(); ctx.moveTo(-34, -10); ctx.lineTo(34, -10); ctx.lineTo(0, 46); ctx.closePath();
-    ctx.fillStyle = theme.accent; ctx.fill();
-    ctx.strokeStyle = "#00000030"; ctx.lineWidth = 3; ctx.stroke();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.beginPath(); ctx.arc(0, 0, radius + 4, 0, Math.PI * 2);
-    ctx.lineWidth = 10; ctx.strokeStyle = "#18181B"; ctx.stroke();
-    ctx.restore();
-  }
-  function drawCycleName(ctx, name, scale = 1, alpha = 1) {
-    const cx = CW * (namePos.x / 100), cy = CH * (namePos.y / 100);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    drawPlate(ctx, cx, cy, 900, 260, 32, namePlate);
-    ctx.translate(cx, cy); ctx.scale(scale, scale);
-    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = fontColor;
-    let fs = nameFontSize;
-    ctx.font = `800 ${fs}px "${fontFamily}", sans-serif`;
-    let label = "@" + truncateLabel(name, 18);
-    while (ctx.measureText(label).width > 820 && fs > 20) { fs -= 4; ctx.font = `800 ${fs}px "${fontFamily}", sans-serif`; }
-    ctx.fillText(label, 0, 8);
-    ctx.restore(); ctx.globalAlpha = 1;
-  }
-  function drawStarPath(ctx, r) {
-    const spikes = 5, step = Math.PI / spikes;
-    let rot = (Math.PI / 2) * 3;
-    ctx.beginPath();
-    ctx.moveTo(0, -r);
-    for (let i = 0; i < spikes; i++) {
-      let x = Math.cos(rot) * r, y = Math.sin(rot) * r;
-      ctx.lineTo(x, y); rot += step;
-      x = Math.cos(rot) * (r / 2); y = Math.sin(rot) * (r / 2);
-      ctx.lineTo(x, y); rot += step;
-    }
-    ctx.lineTo(0, -r); ctx.closePath(); ctx.fill();
-  }
-  function spawnConfetti() {
-    const palette = confettiColorMode === "single" ? [confettiColor] : FESTIVE_CONFETTI_COLORS;
-    const parts = [];
-    for (let i = 0; i < 320; i++) {
-      parts.push({
-        x: Math.random() * CW, y: -20 - Math.random() * 900, vy: 7 + Math.random() * 10,
-        vx: -4 + Math.random() * 8, size: 8 + Math.random() * 16, rot: Math.random() * Math.PI,
-        vrot: -0.25 + Math.random() * 0.5, color: palette[Math.floor(Math.random() * palette.length)], shape: confettiType,
-      });
-    }
-    confettiRef.current = parts;
-  }
-  function drawConfetti(ctx) {
-    confettiRef.current.forEach((p) => {
-      p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
-      ctx.save();
-      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-      if (p.shape === "circles") { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
-      else if (p.shape === "stars") { drawStarPath(ctx, p.size / 2); }
-      else { ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2); }
-      ctx.restore();
-    });
-    confettiRef.current = confettiRef.current.filter((p) => p.y < CH + 40);
-  }
-  function drawWinnerBanner(ctx, name, subtitle) {
-    const cx = CW * (winnerPos.x / 100), cy = CH * (winnerPos.y / 100);
-    ctx.save();
-    ctx.textAlign = "center"; ctx.fillStyle = theme.accent;
-    ctx.font = `700 40px "Work Sans", sans-serif`;
-    ctx.fillText(subtitle, cx, cy - 110);
-    drawPlate(ctx, cx, cy, 940, 220, 32, winnerPlate);
-    ctx.fillStyle = fontColor;
-    let fs = winnerFontSize;
-    ctx.font = `800 ${fs}px "${fontFamily}", sans-serif`;
-    let label = "@" + truncateLabel(name, 20);
-    while (ctx.measureText(label).width > 860 && fs > 24) { fs -= 4; ctx.font = `800 ${fs}px "${fontFamily}", sans-serif`; }
-    ctx.fillText(label, cx, cy + 8);
-    ctx.restore();
-  }
-
-  function drawSelectionBox(ctx, target) {
-    ctx.save();
-    ctx.strokeStyle = theme.accent;
-    ctx.setLineDash([14, 10]);
-    ctx.lineWidth = 4;
-    if (target === "wheel") {
-      const cx = CW * (wheelPos.x / 100), cy = CH * (wheelPos.y / 100);
-      ctx.beginPath(); ctx.arc(cx, cy, wheelRadius + 22, 0, Math.PI * 2); ctx.stroke();
-    } else if (target === "name") {
-      const cx = CW * (namePos.x / 100), cy = CH * (namePos.y / 100);
-      const w = 900 * namePlate.scale + 30, h = 260 * namePlate.scale + 30;
-      roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 24); ctx.stroke();
-    } else {
-      const cx = CW * (winnerPos.x / 100), cy = CH * (winnerPos.y / 100);
-      const w = 940 * winnerPlate.scale + 30, h = 220 * winnerPlate.scale + 190;
-      roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 24); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawGuides(ctx) {
-    if (guides.x == null && guides.y == null) return;
-    ctx.save();
-    ctx.strokeStyle = "#EC4899";
-    ctx.setLineDash([16, 12]);
-    ctx.lineWidth = 4;
-    if (guides.x != null) {
-      const gx = CW * (guides.x / 100);
-      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CH); ctx.stroke();
-    }
-    if (guides.y != null) {
-      const gy = CH * (guides.y / 100);
-      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  const drawIdleFrame = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    drawBackground(ctx);
-    drawTitle(ctx);
-    const displayPool = pool.length ? pool : ["voorbeeld_account"];
-    const previewWinnerName = winners.length ? winners[winners.length - 1] : (pool[0] || "voorbeeld_account");
-    if (method === "wheel") drawWheel(ctx, displayPool, 0);
-    else drawCycleName(ctx, displayPool[0], 1, pool.length ? 1 : 0.35);
-    drawWinnerBanner(ctx, previewWinnerName, "🎉 WINNAAR 🎉");
-    drawSelectionBox(ctx, editTarget);
-    drawGuides(ctx);
-    if (winners.length) {
-      ctx.save(); ctx.textAlign = "center"; ctx.fillStyle = fontColor;
-      ctx.font = `600 30px "Work Sans", sans-serif`;
-      ctx.fillText(`🏆 ${winners.length} winnaar${winners.length > 1 ? "s" : ""} getrokken`, CW / 2, 1720);
-      ctx.restore();
-    }
-    // eslint-disable-next-line
-  }, [pool, method, giveawayName, bgColor, fontColor, fontFamily, winners, namePlate, winnerPlate, wheelColors, namePos, nameFontSize, wheelPos, wheelRadius, winnerPos, winnerFontSize, editTarget, guides]);
-
-  /* ---------------- Gestures: sleep = verplaatsen, knijp = grootte ---------------- */
-  function relPos(clientX, clientY) {
-    const rect = stageRef.current.getBoundingClientRect();
-    return { x: clamp(((clientX - rect.left) / rect.width) * 100, 0, 100), y: clamp(((clientY - rect.top) / rect.height) * 100, 0, 100) };
-  }
-  function currentTargetPos() {
-    return editTarget === "wheel" ? wheelPos : editTarget === "name" ? namePos : winnerPos;
-  }
-  function currentTargetSize() {
-    return editTarget === "wheel" ? { radius: wheelRadius } : editTarget === "name" ? { font: nameFontSize, plateScale: namePlate.scale } : { font: winnerFontSize, plateScale: winnerPlate.scale };
-  }
-  function applyPos(x, y) {
-    let cx = clamp(x, 8, 92), cy = clamp(y, 8, 92);
-    const other = editTarget === "winner" ? (method === "wheel" ? wheelPos : namePos) : winnerPos;
-    const SNAP = 2.5;
-    let gx = null, gy = null;
-    if (Math.abs(cx - 50) < SNAP) { cx = 50; gx = 50; }
-    else if (Math.abs(cx - other.x) < SNAP) { cx = other.x; gx = other.x; }
-    if (Math.abs(cy - 50) < SNAP) { cy = 50; gy = 50; }
-    else if (Math.abs(cy - other.y) < SNAP) { cy = other.y; gy = other.y; }
-    setGuides({ x: gx, y: gy });
-    if (editTarget === "wheel") setWheelPos({ x: cx, y: cy });
-    else if (editTarget === "name") setNamePos({ x: cx, y: cy });
-    else setWinnerPos({ x: cx, y: cy });
-  }
-  function applyScale(factor) {
-    const base = gestureRef.current.baseSize;
-    if (editTarget === "wheel") {
-      setWheelRadius(clamp(Math.round(base.radius * factor), 150, 500));
-    } else if (editTarget === "name") {
-      setNamePlate((p) => ({ ...p, scale: clamp(Number((base.plateScale * factor).toFixed(2)), 0.4, 2.4) }));
-      setNameFontSize(clamp(Math.round(base.font * factor), 24, 160));
-    } else {
-      setWinnerPlate((p) => ({ ...p, scale: clamp(Number((base.plateScale * factor).toFixed(2)), 0.4, 2.4) }));
-      setWinnerFontSize(clamp(Math.round(base.font * factor), 24, 160));
-    }
-  }
-  function onStagePointerDown(e) {
-    if (isBusy) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointersRef.current.set(e.pointerId, relPos(e.clientX, e.clientY));
-    if (pointersRef.current.size === 1) {
-      gestureRef.current = { mode: "drag", startPos: relPos(e.clientX, e.clientY), basePos: currentTargetPos() };
-    } else if (pointersRef.current.size === 2) {
-      const pts = Array.from(pointersRef.current.values());
-      gestureRef.current = { mode: "pinch", startDist: dist2(pts[0], pts[1]), startMid: mid2(pts[0], pts[1]), basePos: currentTargetPos(), baseSize: currentTargetSize() };
-    }
-  }
-  function onStagePointerMove(e) {
-    if (isBusy || !pointersRef.current.has(e.pointerId)) return;
-    pointersRef.current.set(e.pointerId, relPos(e.clientX, e.clientY));
-    const pts = Array.from(pointersRef.current.values());
-    if (pts.length === 1 && gestureRef.current && gestureRef.current.mode === "drag") {
-      const dx = pts[0].x - gestureRef.current.startPos.x, dy = pts[0].y - gestureRef.current.startPos.y;
-      applyPos(gestureRef.current.basePos.x + dx, gestureRef.current.basePos.y + dy);
-    } else if (pts.length === 2 && gestureRef.current && gestureRef.current.mode === "pinch") {
-      const d = dist2(pts[0], pts[1]);
-      const m = mid2(pts[0], pts[1]);
-      const factor = d / (gestureRef.current.startDist || 1);
-      const dx = m.x - gestureRef.current.startMid.x, dy = m.y - gestureRef.current.startMid.y;
-      applyPos(gestureRef.current.basePos.x + dx, gestureRef.current.basePos.y + dy);
-      applyScale(factor);
-    }
-  }
-  function onStagePointerUp(e) {
-    pointersRef.current.delete(e.pointerId);
-    const pts = Array.from(pointersRef.current.values());
-    if (pts.length === 1) gestureRef.current = { mode: "drag", startPos: pts[0], basePos: currentTargetPos() };
-    else if (pts.length === 0) { gestureRef.current = null; setGuides({ x: null, y: null }); }
-  }
-
-  function getSupportedMime() {
-    const candidates = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
-    for (const c of candidates) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
-    return null;
-  }
-  function startRecording() {
-    if (!canRecord) return;
-    const canvas = canvasRef.current;
-    const mime = getSupportedMime();
-    if (!mime || !canvas.captureStream) { setCanRecord(false); return; }
-    setVideoMime(mime.split(";")[0]);
-    const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
-    chunksRef.current = [];
-    recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: mime.split(";")[0] });
-      setVideoBlob(blob); setVideoUrl(URL.createObjectURL(blob));
-    };
-    recorder.start(); recorderRef.current = recorder;
-  }
-  function stopRecording() {
-    if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
-  }
-
-  function startTrekking() {
-    if (pool.length === 0) return;
-    const count = Math.min(winnerCount, pool.length);
-    setWarning(count < winnerCount ? `Slechts ${pool.length} deelnemers beschikbaar — aantal winnaars aangepast.` : "");
-    setWinners([]); setVideoUrl(null); setVideoBlob(null);
-    winnersQueueRef.current = { target: count, got: [] };
-    startRecording();
-    runOneDraw(pool, false);
-  }
-  function startPreview() {
-    if (phase === "spinning" || phase === "revealing") return;
-    const previewPool = pool.length ? pool : DUMMY_NAMES;
-    runOneDraw(previewPool, true);
-  }
-  function runOneDraw(currentPool, isPreview) {
-    setPhase("spinning");
-    const winnerIdx = Math.floor(Math.random() * currentPool.length);
-    const winnerName = currentPool[winnerIdx];
-    if (method === "wheel") animateWheel(currentPool, winnerIdx, winnerName, isPreview);
-    else animateCycle(currentPool, winnerName, isPreview);
-  }
-  function animateWheel(currentPool, winnerIdx, winnerName, isPreview) {
-    const ctx = canvasRef.current.getContext("2d");
-    const n = currentPool.length;
-    const seg = (Math.PI * 2) / n;
-    const targetSegCenter = winnerIdx * seg + seg / 2;
-    const pointerAngle = -Math.PI / 2;
-    const extraSpins = 6 * Math.PI * 2;
-    const finalAngle = pointerAngle - targetSegCenter + extraSpins;
-    const duration = 4200;
-    const start = performance.now();
-    function frame(now) {
-      const t = Math.min((now - start) / duration, 1);
-      drawBackground(ctx); drawTitle(ctx); drawWheel(ctx, currentPool, finalAngle * easeOutQuint(t));
-      if (t < 1) rafRef.current = requestAnimationFrame(frame);
-      else revealWinner(currentPool, winnerName, isPreview);
-    }
-    rafRef.current = requestAnimationFrame(frame);
-  }
-  function animateCycle(currentPool, winnerName, isPreview) {
-    const ctx = canvasRef.current.getContext("2d");
-    const speed = CYCLE_SPEED_LEVELS[cycleSpeedLevel - 1];
-    const flashCount = Math.max(14, currentPool.length + 3);
-    const duration = flashCount * ((speed.min + speed.max) / 2);
-    const start = performance.now();
-    const shuffled = [...currentPool].sort(() => Math.random() - 0.5);
-    let switchIndex = -1;
-    let nextSwitchAt = 0;
-    function frame(now) {
-      const elapsed = now - start;
-      const t = Math.min(elapsed / duration, 1);
-      const eased = easeOutCubic(t);
-      const interval = speed.min + eased * (speed.max - speed.min);
-      if (elapsed >= nextSwitchAt) { switchIndex++; nextSwitchAt += interval; }
-      const nearEnd = t > 0.93;
-      const name = nearEnd ? winnerName : shuffled[switchIndex % shuffled.length];
-      drawBackground(ctx); drawTitle(ctx);
-      drawCycleName(ctx, name, nearEnd ? 1 + (t - 0.93) * 2 : 1, 1);
-      if (t < 1) rafRef.current = requestAnimationFrame(frame);
-      else revealWinner(currentPool, winnerName, isPreview);
-    }
-    rafRef.current = requestAnimationFrame(frame);
-  }
-  function currentWheelFinalAngle(currentPool, winnerName) {
-    const idx = currentPool.indexOf(winnerName);
-    const n = currentPool.length;
-    const seg = (Math.PI * 2) / n;
-    return -Math.PI / 2 - (idx * seg + seg / 2);
-  }
-  function revealWinner(currentPool, winnerName, isPreview) {
-    setPhase("revealing");
-    spawnConfetti();
-    const ctx = canvasRef.current.getContext("2d");
-    const revealStart = performance.now();
-    const revealDuration = 2200;
-    function frame(now) {
-      const t = Math.min((now - revealStart) / revealDuration, 1);
-      drawBackground(ctx); drawTitle(ctx);
-      if (method === "wheel") drawWheel(ctx, currentPool, currentWheelFinalAngle(currentPool, winnerName));
-      else drawCycleName(ctx, winnerName, 1.3, 1);
-      drawWinnerBanner(ctx, winnerName, isPreview ? "👁️ VOORBEELD" : "🎉 WINNAAR 🎉");
-      drawConfetti(ctx);
-      if (t < 1) rafRef.current = requestAnimationFrame(frame);
-      else finishDraw(currentPool, winnerName, isPreview);
-    }
-    rafRef.current = requestAnimationFrame(frame);
-  }
-  function finishDraw(currentPool, winnerName, isPreview) {
-    if (isPreview) {
-      setTimeout(() => { setPhase("idle"); drawIdleFrame(); }, 400);
-      return;
-    }
-    const q = winnersQueueRef.current;
-    q.got.push(winnerName);
-    setWinners([...q.got]);
-    const remainingPool = currentPool.filter((p) => p !== winnerName);
-    setPool(remainingPool);
-    if (q.got.length < q.target && remainingPool.length > 0) setTimeout(() => runOneDraw(remainingPool, false), 1300);
-    else { setPhase("done"); setTimeout(() => stopRecording(), 300); }
-  }
-  function resetTrekking() {
-    cancelAnimationFrame(rafRef.current);
-    setWinners([]); setPhase("idle"); setVideoUrl(null); setVideoBlob(null);
-    setPool(entrants); confettiRef.current = [];
-  }
-  async function shareVideo() {
-    if (!videoBlob) return;
-    const ext = videoMime.includes("mp4") ? "mp4" : "webm";
-    const file = new File([videoBlob], `trekking-${Date.now()}.${ext}`, { type: videoMime });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: giveawayName || "Trekking" }); return; } catch (e) {}
-    }
-    const a = document.createElement("a");
-    a.href = videoUrl; a.download = `trekking-${Date.now()}.${ext}`; a.click();
-  }
-
-  const isBusy = phase === "spinning" || phase === "revealing";
-  const accentText = getContrastText(theme.accent);
-
-  return (
-    <div className="min-h-screen w-full flex justify-center" style={{ backgroundColor: theme.appBg, fontFamily: "'Work Sans', sans-serif" }}>
-      <div className="w-full max-w-2xl pb-16">
-        <div className="px-5 pt-6 pb-2 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>🎟️ De Trekking</h1>
-            <p className="text-xs" style={{ color: "#71717A" }}>Winnaar-picker voor Carmi giveaways</p>
-          </div>
-          <button onClick={() => setShowEntrantsModal(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold shrink-0" style={{ backgroundColor: theme.accent, color: accentText }}>
-            👥 Deelnemers {entrants.length > 0 ? `(${entrants.length})` : ""}
-          </button>
-        </div>
-
-        {/* ---- STICKY STAGE: blijft zichtbaar terwijl je instellingen scrolt ---- */}
-        <div className="sticky top-0 z-20 px-5 pt-2 pb-2" style={{ backgroundColor: theme.appBg, borderBottom: `2px dashed ${NEUTRAL_LINE}` }}>
-          <div className="flex gap-1.5 mb-1.5 justify-center">
-            <button onClick={() => setMethod("wheel")} disabled={isBusy} className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: method === "wheel" ? "#18181B" : "transparent", color: method === "wheel" ? "#FFFFFF" : "#18181B", border: "2px solid #18181B" }}>🎡 Rad</button>
-            <button onClick={() => setMethod("cycle")} disabled={isBusy} className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: method === "cycle" ? "#18181B" : "transparent", color: method === "cycle" ? "#FFFFFF" : "#18181B", border: "2px solid #18181B" }}>🔀 Doorloop</button>
-          </div>
-          <div className="flex gap-1.5 mb-1.5 justify-center">
-            <button onClick={() => setEditTarget(method === "wheel" ? "wheel" : "name")} disabled={isBusy}
-              className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: editTarget !== "winner" ? theme.accent : "transparent", color: editTarget !== "winner" ? accentText : theme.accent, border: `2px solid ${theme.accent}` }}>
-              {method === "wheel" ? "🎡 Rad" : "🔀 Naam"}
-            </button>
-            <button onClick={() => setEditTarget("winner")} disabled={isBusy}
-              className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: editTarget === "winner" ? theme.accent : "transparent", color: editTarget === "winner" ? accentText : theme.accent, border: `2px solid ${theme.accent}` }}>
-              🏆 Winnaar
-            </button>
-          </div>
-
-          <div className="flex justify-center">
-            <div ref={stageRef} onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerUp} onPointerCancel={onStagePointerUp}
-              className="relative" style={{ width: "100%", maxWidth: 190, aspectRatio: "9 / 16", borderRadius: 14, overflow: "hidden", boxShadow: "0 6px 16px rgba(0,0,0,0.18)", border: `3px solid ${theme.accent}`, touchAction: "none", cursor: isBusy ? "default" : "grab" }}>
-              <canvas ref={canvasRef} width={CW} height={CH} style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }} />
-            </div>
-          </div>
-
-          {warning && <p className="text-[11px] text-center mt-1" style={{ color: "#B45309" }}>{warning}</p>}
-          {!canRecord && <p className="text-[11px] text-center mt-1" style={{ color: "#B45309" }}>Video-opname niet ondersteund op dit toestel — trekking werkt wel gewoon.</p>}
-
-          <div className="flex gap-2 mt-2">
-            <button onClick={startPreview} disabled={isBusy} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50" style={{ border: `2px solid ${theme.accent}`, color: theme.accent }}>👁️ Preview</button>
-            <button onClick={startTrekking} disabled={isBusy || pool.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm disabled:opacity-50" style={{ backgroundColor: theme.accent, color: accentText, fontFamily: "'Space Grotesk', sans-serif" }}>✨ {isBusy ? "Bezig..." : "Start de trekking"}</button>
-            {(winners.length > 0 || phase === "done") && !isBusy && (
-              <button onClick={resetTrekking} className="px-4 rounded-lg" style={{ border: `2px solid ${theme.accent}`, color: theme.accent }} title="Opnieuw">↺</button>
-            )}
-          </div>
-        </div>
-
-        <div className="mx-5 mt-4 rounded-xl overflow-hidden" style={{ border: `2px solid ${NEUTRAL_LINE}`, backgroundColor: SURFACE }}>
-          <Perforation />
-          <div className="p-5">
-            {pool.length === 0 && winners.length === 0 && (
-              <div className="text-center pb-5 mb-5" style={{ borderBottom: `2px dashed ${NEUTRAL_LINE}` }}>
-                <p className="text-sm mb-3" style={{ color: "#71717A" }}>Nog geen deelnemers geladen — je kan hierboven wel al stijlen en pinchen met voorbeeldnamen.</p>
-                <button onClick={() => setShowEntrantsModal(true)} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: theme.accent, color: accentText }}>Deelnemers toevoegen</button>
-              </div>
-            )}
-            <React.Fragment>
-                {videoUrl && (
-                  <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: "#FAFAFA", border: `2px solid ${NEUTRAL_LINE}` }}>
-                    <p className="text-sm font-semibold mb-2" style={{ color: "#18181B" }}>🎬 Video van de trekking</p>
-                    <video src={videoUrl} controls className="w-full rounded-lg mb-3" style={{ maxHeight: 280 }} />
-                    <button onClick={shareVideo} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: theme.accent, color: accentText }}>📤 Bewaar op telefoon</button>
-                  </div>
-                )}
-
-                {winners.length > 0 && (
-                  <div className="mb-6">
-                    <SectionLabel n="W" accent={theme.accent}>Winnaars</SectionLabel>
-                    <div className="space-y-2">
-                      {winners.map((w, i) => (
-                        <div key={w + i} className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ backgroundColor: "#FAFAFA", border: `1px dashed ${theme.accent}` }}>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: theme.accent, color: accentText }}>#{i + 1}</span>
-                          <span className="font-semibold text-sm" style={{ color: "#18181B", fontFamily: `"${fontFamily}", sans-serif` }}>@{w}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-xs mb-6 text-center" style={{ color: "#71717A" }}>{pool.length} deelnemer{pool.length !== 1 ? "s" : ""} nog in de pot</div>
-
-                {/* ---- Video-stijl ---- */}
-                <div className="pt-2" style={{ borderTop: `2px dashed ${NEUTRAL_LINE}` }}>
-                  <SectionLabel n="01" accent={theme.accent}>Video-stijl</SectionLabel>
-
-                  <Field label="Naam van de giveaway (optioneel)">
-                    <input value={giveawayName} onChange={(e) => setGiveawayName(e.target.value)} placeholder="bv. Zomer Giveaway — laat leeg voor geen titel" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: `2px solid ${NEUTRAL_LINE}` }} />
-                  </Field>
-
-                  <Field label="Achtergrond">
-                    <div className="flex gap-2">
-                      <label className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm cursor-pointer font-semibold" style={{ border: `2px solid ${theme.accent}`, color: theme.accent }}>
-                        ⬆ Afbeelding kiezen
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                          const file = e.target.files && e.target.files[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => setBgImage(reader.result);
-                          reader.readAsDataURL(file);
-                        }} />
-                      </label>
-                      {bgImage && <button onClick={() => setBgImage(null)} className="px-3 rounded-lg text-sm" style={{ border: "2px solid #DC2626", color: "#DC2626" }}>✕</button>}
-                    </div>
-                  </Field>
-
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <Field label="🎨 Achtergrondkleur"><input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer" /></Field>
-                    <Field label="🎨 Tekstkleur"><input type="color" value={fontColor} onChange={(e) => setFontColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer" /></Field>
-                  </div>
-
-                  <Field label="🔤 Lettertype">
-                    <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: `2px solid ${NEUTRAL_LINE}`, fontFamily: `"${fontFamily}", sans-serif` }}>
-                      {FONT_GROUPS.map((g) => (
-                        <optgroup key={g.label} label={g.label}>
-                          {g.fonts.map((f) => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </Field>
-
-                  <Field label="Manier van trekken">
-                    <div className="flex gap-2">
-                      {[{ id: "wheel", label: "🎡 Rad" }, { id: "cycle", label: "🔀 Doorloop" }].map((m) => (
-                        <button key={m.id} onClick={() => setMethod(m.id)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: method === m.id ? theme.accent : "transparent", color: method === m.id ? accentText : theme.accent, border: `2px solid ${theme.accent}` }}>{m.label}</button>
-                      ))}
-                    </div>
-                  </Field>
-
-                  {method === "cycle" && (
-                    <Field label={`Snelheid van de doorloop — ${CYCLE_SPEED_LABELS[cycleSpeedLevel - 1]}`}>
-                      <input type="range" min="1" max="5" step="1" value={cycleSpeedLevel} onChange={(e) => setCycleSpeedLevel(Number(e.target.value))} className="w-full" style={{ accentColor: theme.accent }} />
-                      <div className="flex justify-between text-[10px] mt-1" style={{ color: "#A1A1AA" }}><span>Zeer snel</span><span>Zeer traag</span></div>
-                    </Field>
-                  )}
-
-                  <Field label="Aantal winnaars">
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => setWinnerCount((c) => Math.max(1, c - 1))} className="w-9 h-9 rounded-lg font-bold" style={{ border: `2px solid ${theme.accent}`, color: theme.accent }}>−</button>
-                      <span className="text-lg font-bold w-8 text-center" style={{ color: "#18181B" }}>{winnerCount}</span>
-                      <button onClick={() => setWinnerCount((c) => Math.min(entrants.length || 1, c + 1))} className="w-9 h-9 rounded-lg font-bold" style={{ border: `2px solid ${theme.accent}`, color: theme.accent }}>+</button>
-                      <span className="text-xs" style={{ color: "#71717A" }}>max {entrants.length}</span>
-                    </div>
-                  </Field>
-                </div>
-
-                {/* ---- Rad-kleuren ---- */}
-                <details className="mt-6 pt-4" style={{ borderTop: `2px dashed ${NEUTRAL_LINE}` }}>
-                  <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>🎡 Kleuren van het rad</summary>
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    {wheelColors.map((c, i) => (
-                      <div key={i}>
-                        <label className="block text-[10px] font-semibold mb-1" style={{ color: "#3F3F46" }}>Kleur {i + 1}</label>
-                        <input type="color" value={c} onChange={(e) => setWheelColors((prev) => prev.map((pc, pi) => (pi === i ? e.target.value : pc)))} className="w-full h-9 rounded-lg cursor-pointer" />
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={() => setWheelColors(buildWheelPalette(theme.accent))} className="mt-3 text-xs font-semibold underline" style={{ color: "#71717A" }}>Herstel op basis van accentkleur</button>
-                </details>
-
-                {/* ---- Confetti ---- */}
-                <details className="mt-4 pt-4" style={{ borderTop: `2px dashed ${NEUTRAL_LINE}` }}>
-                  <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>🎊 Confetti</summary>
-                  <div className="mt-4">
-                    <Field label="Vorm">
-                      <div className="flex gap-2">
-                        {[{ id: "squares", label: "⬛ Vierkant" }, { id: "circles", label: "⚪ Rond" }, { id: "stars", label: "⭐ Ster" }].map((s) => (
-                          <button key={s.id} onClick={() => setConfettiType(s.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: confettiType === s.id ? theme.accent : "transparent", color: confettiType === s.id ? accentText : theme.accent, border: `2px solid ${theme.accent}` }}>{s.label}</button>
-                        ))}
-                      </div>
-                    </Field>
-                    <Field label="Kleuren">
-                      <div className="flex gap-2 mb-2">
-                        {[{ id: "multi", label: "🌈 Multicolor" }, { id: "single", label: "🎨 1 kleur" }].map((s) => (
-                          <button key={s.id} onClick={() => setConfettiColorMode(s.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: confettiColorMode === s.id ? theme.accent : "transparent", color: confettiColorMode === s.id ? accentText : theme.accent, border: `2px solid ${theme.accent}` }}>{s.label}</button>
-                        ))}
-                      </div>
-                      {confettiColorMode === "multi" ? (
-                        <p className="text-[11px]" style={{ color: "#A1A1AA" }}>Standaard vrolijke mix van kleuren.</p>
-                      ) : (
-                        <input type="color" value={confettiColor} onChange={(e) => setConfettiColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer" />
-                      )}
-                    </Field>
-                  </div>
-                </details>
-
-                {/* ---- Kaders achter tekst ---- */}
-                <details className="mt-4 pt-4" style={{ borderTop: `2px dashed ${NEUTRAL_LINE}` }}>
-                  <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>🖼️ Kaders achter tekst</summary>
-                  <div className="mt-4">
-                    <p className="text-xs font-bold mb-2" style={{ color: "#71717A" }}>Kader achter naam tijdens de trekking</p>
-                    <PlateEditor cfg={namePlate} setCfg={setNamePlate} accent={theme.accent} imagePalette={imagePalette} />
-                    <p className="text-xs font-bold mt-5 mb-2" style={{ color: "#71717A" }}>Kader achter winnaar-tekst</p>
-                    <PlateEditor cfg={winnerPlate} setCfg={setWinnerPlate} accent={theme.accent} imagePalette={imagePalette} />
-                  </div>
-                </details>
-
-                {/* ---- App-thema ---- */}
-                <details className="mt-4 pt-4" style={{ borderTop: `2px dashed ${NEUTRAL_LINE}` }}>
-                  <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>🎨 Thema van de app (accentkleur &amp; achtergrond)</summary>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <Field label="Accentkleur"><input type="color" value={theme.accent} onChange={(e) => setTheme((t) => ({ ...t, accent: e.target.value }))} className="w-full h-10 rounded-lg cursor-pointer" /></Field>
-                    <Field label="Achtergrond app"><input type="color" value={theme.appBg} onChange={(e) => setTheme((t) => ({ ...t, appBg: e.target.value }))} className="w-full h-10 rounded-lg cursor-pointer" /></Field>
-                  </div>
-                  <button onClick={() => setTheme(DEFAULT_THEME)} className="mt-1 text-xs font-semibold underline" style={{ color: "#71717A" }}>Reset naar neutraal</button>
-                </details>
-              </React.Fragment>
-          </div>
-          <Perforation />
-        </div>
-
-        <p className="text-center text-xs mt-4 px-5" style={{ color: "#A1A1AA" }}>Video wordt lokaal in je browser opgenomen — niets wordt ergens geüpload.</p>
+    <a class="tile orange" href="stikker.html">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="4"/></svg>
       </div>
+      <div class="name">Stikker</div>
+      <div class="desc">Stopmotion camera &amp; sticker-overlay</div>
+    </a>
 
-      {showEntrantsModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-5" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setShowEntrantsModal(false)}>
-          <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold" style={{ color: "#18181B", fontFamily: "'Space Grotesk', sans-serif" }}>👥 Deelnemers</h2>
-                <button onClick={() => setShowEntrantsModal(false)} className="text-xl leading-none" style={{ color: "#71717A" }}>✕</button>
-              </div>
+    <a class="tile rose" href="kronkellijn.html">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><path d="M3 15c2-6 5-6 7 0s5 6 7 0 4-8 4-8"/></svg>
+      </div>
+      <div class="name">Kronkellijn</div>
+      <div class="desc">Tekst op een golvende lijn, 4 slides</div>
+    </a>
 
-              <Field label="Plak de comments">
-                <textarea value={rawComments} onChange={(e) => setRawComments(e.target.value)} placeholder="Plak hier alle comments die je van de post hebt gekopieerd..." className="w-full h-36 rounded-lg p-3 text-sm resize-none outline-none" style={{ border: `2px solid ${NEUTRAL_LINE}`, color: "#18181B" }} />
-              </Field>
+    <a class="tile blue" href="stack-reel.html">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="4.5" rx="1"/><rect x="4" y="9.75" width="16" height="4.5" rx="1"/><rect x="4" y="15.5" width="16" height="4.5" rx="1"/></svg>
+      </div>
+      <div class="name">Stack Reel</div>
+      <div class="desc">Video's boven elkaar stapelen</div>
+    </a>
 
-              <button onClick={handleProcess} disabled={!rawComments.trim()} className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-sm disabled:opacity-40" style={{ backgroundColor: theme.accent, color: accentText }}>✨ Verwerk comments</button>
+    <a class="tile teal" href="scrapt.html">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="M21 15l-5-5-9 9"/></svg>
+      </div>
+      <div class="name">Scrapt</div>
+      <div class="desc">Post studio — collages &amp; layouts</div>
+    </a>
 
-              {processed && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold" style={{ color: "#18181B" }}>Unieke deelnemers</span>
-                    <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: theme.accent, color: accentText }}>{entrants.length} accounts</span>
-                  </div>
-                  {entrants.length === 0 ? (
-                    <p className="text-sm italic" style={{ color: "#71717A" }}>Geen accounts herkend. Voeg hieronder handmatig toe, of controleer je paste.</p>
-                  ) : (
-                    <div className="max-h-48 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${NEUTRAL_LINE}` }}>
-                      {entrants.map((e, i) => (
-                        <div key={e + i} className="flex items-center justify-between px-3 py-2 text-sm">
-                          <span style={{ color: "#18181B" }}>@{e}</span>
-                          <button onClick={() => removeEntrant(i)} className="opacity-50 hover:opacity-100">✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-3">
-                    <input value={manualAdd} onChange={(e) => setManualAdd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addManual()} placeholder="@gebruikersnaam handmatig toevoegen" className="flex-1 rounded-lg px-3 py-2 text-sm outline-none" style={{ border: `2px solid ${NEUTRAL_LINE}` }} />
-                    <button onClick={addManual} className="px-3 rounded-lg" style={{ backgroundColor: theme.accent, color: accentText }}>+</button>
-                  </div>
-                  <button onClick={useListInTrekking} disabled={entrants.length === 0} className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-sm disabled:opacity-40" style={{ backgroundColor: "#18181B", color: "#FFFFFF" }}>Gebruik deze lijst in de trekking ›</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+    <a class="tile purple" href="winner-picker.html">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 01-10 0V4z"/><path d="M7 6H4a3 3 0 003 3"/><path d="M17 6h3a3 3 0 01-3 3"/></svg>
+      </div>
+      <div>
+        <div class="name">Winner Picker</div>
+        <div class="desc">Trek willekeurig een winnaar</div>
+      </div>
+    </a>
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-</script>
+  </div>
+
+  <footer>Verzameling van eigen tools<br>Tik op een tegel om de tool te openen</footer>
+
+</div>
 </body>
 </html>
