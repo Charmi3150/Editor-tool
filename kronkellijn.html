@@ -4268,7 +4268,21 @@ window.addEventListener('keydown', (e)=>{
 });
 
 // ---------- Export: static PNG slides ----------
-document.getElementById('exportBtn').addEventListener('click', ()=>{
+// Downloads worden na elkaar (met een korte pauze) gestart in plaats van
+// allemaal tegelijk. Browsers zoals Chrome blokkeren namelijk stilzwijgend
+// downloads die razendsnel na elkaar (async, zonder gebruikersactie ertussen)
+// worden getriggerd — daardoor kwam er eerder maar 1 PNG door.
+function sliceToBlob(canvas){
+  return new Promise(resolve=> canvas.toBlob(resolve, 'image/png'));
+}
+function wait(ms){
+  return new Promise(resolve=> setTimeout(resolve, ms));
+}
+document.getElementById('exportBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('exportBtn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+
   const path = buildWavePath();
   const clean = document.createElement('canvas');
   clean.width = FULL_W; clean.height = FULL_H;
@@ -4276,19 +4290,24 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   renderSceneAt(cctx, previewT, 0, FULL_W, FULL_H, path);
 
   for(let i=0;i<N_SLIDES;i++){
+    btn.textContent = `Exporteren… (${i+1}/${N_SLIDES})`;
     const slice = document.createElement('canvas');
     slice.width = SLIDE_W; slice.height = SLIDE_H;
     const sctx = slice.getContext('2d');
     sctx.drawImage(clean, i*SLIDE_W, 0, SLIDE_W, SLIDE_H, 0, 0, SLIDE_W, SLIDE_H);
-    slice.toBlob(blob=>{
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `slide-${i+1}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }, 'image/png');
+    const blob = await sliceToBlob(slice);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `slide-${i+1}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+    if(i < N_SLIDES-1) await wait(350); // pauze zodat de browser elke download apart toestaat
   }
+
+  btn.textContent = originalLabel;
+  btn.disabled = false;
 });
 
 // ---------- Export: animated video slides (seamless carousel) ----------
