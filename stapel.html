@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stapel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Gochi+Hand&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#F2EFE6">
+<style>
+  /* ===== Editor huisstijl (gedeeld door alle tools) ===== */
+  :root{
+    --cream:#F2EFE6;
+    --card:#FFFDF8;
+    --blue:#1F3FBF;
+    --blue-deep:#162F96;
+    --blue-soft:#E3E7F8;
+    --ink:#15173A;
+    --muted:#6C6F88;
+    --hair:#D9D6CB;
+    --danger:#C8432F;
+    --f-body:'Archivo', system-ui, -apple-system, sans-serif;
+    --f-hand:'Gochi Hand', cursive;
+  }
+  .display{font-family:var(--f-body); font-weight:800; font-stretch:72%; text-transform:uppercase; line-height:.86; letter-spacing:-.005em;}
+  .hand{font-family:var(--f-hand); font-weight:400;}
+  .ed-topbar{display:flex; align-items:center; gap:14px;}
+  .ed-back{
+    width:44px;height:44px;border-radius:14px;flex-shrink:0;
+    background:var(--card); border:1.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;text-decoration:none;
+  }
+  .ed-back svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .ed-title h1{font-size:40px; margin:0; color:var(--ink);}
+  .ed-title .hand{font-size:17px; color:var(--blue); margin-top:2px;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:var(--f-body); padding:22px 18px 60px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  .ed-topbar{margin-bottom:10px;}
+  .sub{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 20px;}
+
+  .panel{
+    background:var(--card); border:1.5px solid var(--ink);
+    border-radius:24px; padding:20px; margin-bottom:14px;
+  }
+  .panel h2{
+    font-family:var(--f-body); font-weight:800; font-stretch:72%;
+    font-size:26px; line-height:.9; text-transform:uppercase;
+    color:var(--ink); margin:0 0 14px; display:flex; align-items:center; gap:10px;
+  }
+  .panel h2 .step{
+    width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;
+    font-size:15px;font-stretch:90%;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .row{display:flex;gap:10px;margin-bottom:10px;}
+  .field{flex:1;}
+  label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  input[type=number]{
+    width:100%; background:#fff; border:1.5px solid var(--hair); color:var(--ink);
+    padding:11px 14px; border-radius:14px; font-family:inherit; font-size:15px;
+  }
+  input[type=number]:focus{outline:none;border-color:var(--blue);}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .preset-btn{
+    background:transparent; border:1.5px solid var(--ink); color:var(--ink);
+    font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px;
+    cursor:pointer; font-family:inherit;
+  }
+  .preset-btn:hover{background:var(--blue-soft);border-color:var(--blue);color:var(--blue);}
+
+  .slot2{
+    display:flex; align-items:flex-start; gap:12px;
+    border:1.5px dashed var(--hair); border-radius:18px;
+    padding:12px; margin-bottom:8px; background:#fff;
+  }
+  .slot2.filled{border-style:solid;border-color:var(--hair);}
+  .slot2 .n{
+    width:28px;height:28px;flex-shrink:0;margin-top:2px;
+    background:var(--blue-soft);color:var(--blue);
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+  }
+  .slot2.filled .n{background:var(--blue);color:#fff;}
+  .slot2-main{flex:1;min-width:0;}
+  .filerow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .filebtn{
+    background:transparent;border:1.5px solid var(--blue);color:var(--blue);
+    font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;cursor:pointer;font-family:inherit;
+    flex-shrink:0;
+  }
+  .fname{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dims{display:flex;align-items:center;gap:6px;}
+  .dims input[type=number]{
+    width:84px;flex:none; padding:8px 10px; border-radius:12px; font-size:13px;
+  }
+  .dims span.x{color:var(--muted);font-size:12px;}
+  .dims span.px{color:var(--muted);font-size:11px;}
+  .removeBtn{
+    background:transparent;border:1.5px solid var(--hair);color:var(--muted);
+    width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;
+    flex-shrink:0;font-family:inherit;
+  }
+  .removeBtn:hover{border-color:var(--danger);color:var(--danger);}
+
+  #addRowBtn{
+    width:100%; background:transparent; border:1.5px dashed var(--blue); color:var(--blue);
+    padding:12px; border-radius:999px; cursor:pointer; font-family:inherit;
+    font-size:13px; font-weight:700; margin-top:4px;
+  }
+
+  .totalinfo{font-size:12.5px;color:var(--muted);margin-top:12px;}
+  .totalinfo b{color:var(--blue);}
+
+  button.primary{
+    width:100%; background:var(--blue); color:#fff; border:none;
+    padding:16px; border-radius:999px; cursor:pointer;
+    font-family:var(--f-body); font-weight:800; font-stretch:80%;
+    font-size:18px; letter-spacing:.04em; text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  button.primary:disabled{background:var(--hair);color:var(--muted);cursor:not-allowed;}
+  button.primary:not(:disabled):active{background:var(--blue-deep);}
+
+  button.secondary{
+    width:100%; background:transparent; color:var(--ink);
+    border:1.5px solid var(--ink); padding:12px; font-size:13.5px; font-weight:700;
+    border-radius:999px; cursor:pointer; font-family:inherit; margin:10px 0 14px;
+  }
+  button.secondary:disabled{border-color:var(--hair);color:var(--muted);cursor:not-allowed;}
+
+  #stage{
+    display:flex; justify-content:center; background:var(--ink);
+    border-radius:18px; overflow:hidden; margin-bottom:12px;
+    position:relative; touch-action:none;
+  }
+  #canvas{max-width:100%;max-height:70vh;display:block;background:var(--ink);touch-action:none;}
+
+  #hiddenVideos{
+    position:absolute; width:1px;height:1px; overflow:hidden; opacity:0.01;
+    pointer-events:none; top:0;left:0;
+  }
+
+  .status{font-size:12.5px;color:var(--muted);text-align:center;margin:8px 0 0;min-height:16px;}
+  .status.active{color:var(--blue);font-weight:600;}
+  .status.err{color:var(--danger);}
+
+  .zoomrow{
+    display:flex;align-items:center;gap:10px; margin-bottom:10px;
+    font-size:12px; color:var(--muted);
+  }
+  .zoomrow span.lbl{width:56px;flex-shrink:0;font-weight:700;color:var(--ink);}
+  .zoomrow input[type=range]{flex:1;accent-color:var(--blue);}
+  .zoomrow button{
+    background:transparent;border:1.5px solid var(--hair);color:var(--muted);
+    font-size:11px;font-weight:600;padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;
+  }
+  .zoomrow label{text-transform:none;letter-spacing:0;font-weight:500;}
+
+  #resultBox{display:none;margin-top:14px;}
+  #resultVideo{width:100%;border-radius:18px;display:block;background:var(--ink);}
+  .save-hint{
+    font-size:13px;color:var(--blue); background:var(--blue-soft);
+    border-radius:16px; padding:12px 14px; margin-top:10px; line-height:1.5;
+  }
+
+  #downloadLink{
+    display:none; text-align:center; background:var(--blue); color:#fff;
+    text-decoration:none; padding:15px; border-radius:999px; margin-top:10px;
+    font-weight:800; font-stretch:80%; font-size:17px; letter-spacing:.04em; text-transform:uppercase;
+  }
+
+  .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;}
+  .filmline{
+    height:1.5px;
+    background:repeating-linear-gradient(90deg,var(--hair) 0 6px, transparent 6px 12px);
+    margin:22px 0 4px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="ed-topbar">
+    <a class="ed-back" href="index.html" aria-label="Terug naar overzicht"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+    <div class="ed-title">
+      <h1 class="display">Stapel</h1>
+      <div class="hand">video's boven elkaar</div>
+    </div>
+  </header>
+  <p class="sub">Zet meerdere video's boven elkaar in één canvas. Geef per video een eigen breedte en hoogte in pixels, sleep om te verschuiven, zoom om uit te snijden.</p>
+
+  <div class="panel">
+    <h2><span class="step">1</span>Uitvoerbreedte</h2>
+    <div class="field">
+      <label>Breedte (px)</label>
+      <input type="number" id="canvasW" value="1080" min="100" step="1">
+    </div>
+    <div class="presets">
+      <button class="preset-btn" data-w="1080">1080px</button>
+      <button class="preset-btn" data-w="720">720px</button>
+      <button class="preset-btn" data-w="1440">1440px</button>
+    </div>
+    <div class="hint">Dit is de breedte van het eindresultaat. De totale hoogte wordt automatisch de som van de hoogtes die je hieronder per video ingeeft.</div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="step">2</span>Video's</h2>
+    <div id="slots"></div>
+    <button id="addRowBtn">+ Video toevoegen</button>
+    <div class="totalinfo" id="totalInfo"></div>
+  </div>
+
+  <button class="primary" id="buildBtn" disabled>Live voorbeeld bouwen</button>
+
+  <div class="panel" id="stagePanel" style="display:none;">
+    <h2><span class="step">3</span>Live voorbeeld</h2>
+    <div id="stage"><canvas id="canvas"></canvas></div>
+    <div id="hiddenVideos"></div>
+
+    <button class="secondary" id="playToggle">▶ Beweging tonen</button>
+    <div id="perfWarning" class="hint" style="display:none;color:var(--danger);"></div>
+
+    <div id="zoomControls"></div>
+    <div class="hint" style="margin-top:0;">Sleep op de video zelf om te verschuiven binnen zijn vak. Gebruik de schuiver om in/uit te zoomen.</div>
+
+    <div class="zoomrow" style="margin-top:14px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin:0;">
+        <input type="checkbox" id="audioToggle" style="accent-color:var(--blue);width:18px;height:18px;">
+        Geluid meenemen (trager bij veel video's)
+      </label>
+    </div>
+
+    <button class="primary" id="exportBtn" style="margin-top:8px;">Exporteren als video</button>
+    <div class="status" id="status"></div>
+
+    <div id="resultBox">
+      <video id="resultVideo" controls playsinline></video>
+      <div class="save-hint">📲 Tik op de video hierboven, houd ingedrukt en kies <b>"Bewaar video"</b> om hem in je camerarol te zetten. Werkt dat niet, gebruik dan de downloadknop.</div>
+      <a id="downloadLink">⬇ Download reel</a>
+    </div>
+  </div>
+
+  <div class="filmline"></div>
+  <div class="hint">Tip: gebruik video's van vergelijkbare lengte. Kortere video's lussen automatisch door tot de langste is afgelopen.</div>
+</div>
+
+<script>
+const canvasW = document.getElementById('canvasW');
+const slotsEl = document.getElementById('slots');
+const addRowBtn = document.getElementById('addRowBtn');
+const totalInfo = document.getElementById('totalInfo');
+const buildBtn = document.getElementById('buildBtn');
+const stagePanel = document.getElementById('stagePanel');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const hiddenVideos = document.getElementById('hiddenVideos');
+const zoomControls = document.getElementById('zoomControls');
+const exportBtn = document.getElementById('exportBtn');
+const statusEl = document.getElementById('status');
+const resultBox = document.getElementById('resultBox');
+const resultVideo = document.getElementById('resultVideo');
+const downloadLink = document.getElementById('downloadLink');
+
+// dynamic list of row definitions: {file, width, height}
+let rows = [ { file:null, width: parseInt(canvasW.value)||1080, height:400 } ];
+let clips = []; // {el, baseScale, userScale, dx, dy, stripY, stripH, boxX, boxW}
+let liveLoopId = null;
+let recorder = null;
+let audioCtx = null;
+let audioSourceMap = new WeakMap();
+let dragging = null;
+
+document.querySelectorAll('.preset-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    canvasW.value = b.dataset.w;
+    resetBuild();
+  });
+});
+canvasW.addEventListener('input', resetBuild);
+
+addRowBtn.addEventListener('click', ()=>{
+  const last = rows[rows.length-1];
+  rows.push({ file:null, width: last ? last.width : (parseInt(canvasW.value)||1080), height: last ? last.height : 400 });
+  renderRows();
+  resetBuild();
+});
+
+function removeRow(i){
+  if(rows.length<=1) return;
+  rows.splice(i,1);
+  renderRows();
+  resetBuild();
+}
+
+function renderRows(){
+  slotsEl.innerHTML = '';
+  rows.forEach((r,i)=>{
+    const slot = document.createElement('div');
+    slot.className = 'slot2' + (r.file ? ' filled' : '');
+    slot.innerHTML = `
+      <div class="n">${i+1}</div>
+      <div class="slot2-main">
+        <div class="filerow">
+          <button type="button" class="filebtn">Kies bestand</button>
+          <span class="fname">${r.file ? r.file.name : 'geen bestand gekozen'}</span>
+          <input type="file" accept="video/*" style="display:none">
+        </div>
+        <div class="dims">
+          <input type="number" class="wIn" value="${r.width}" min="20" step="1"><span class="x">×</span>
+          <input type="number" class="hIn" value="${r.height}" min="20" step="1"><span class="px">px</span>
+        </div>
+      </div>
+      <button type="button" class="removeBtn">×</button>
+    `;
+    slotsEl.appendChild(slot);
+
+    const fileInput = slot.querySelector('input[type=file]');
+    slot.querySelector('.filebtn').addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(f){
+        r.file = f;
+        renderRows();
+        resetBuild();
+      }
+    });
+    slot.querySelector('.wIn').addEventListener('input', (e)=>{
+      r.width = parseInt(e.target.value) || r.width;
+      updateTotalInfo();
+      resetBuild();
+    });
+    slot.querySelector('.hIn').addEventListener('input', (e)=>{
+      r.height = parseInt(e.target.value) || r.height;
+      updateTotalInfo();
+      resetBuild();
+    });
+    slot.querySelector('.removeBtn').addEventListener('click', ()=> removeRow(i));
+  });
+  updateTotalInfo();
+  buildBtn.disabled = !rows.some(r=>r.file);
+}
+
+function updateTotalInfo(){
+  const withFile = rows.filter(r=>r.file);
+  const totalH = withFile.reduce((s,r)=> s + (r.height||0), 0);
+  totalInfo.innerHTML = withFile.length
+    ? `Canvas wordt <b>${canvasW.value}px</b> breed × <b>${totalH}px</b> hoog (som van ${withFile.length} video's).`
+    : `Voeg minstens 1 video toe.`;
+}
+
+function resetBuild(){
+  stagePanel.style.display='none';
+  buildBtn.disabled = !rows.some(r=>r.file);
+  statusEl.textContent='';
+  statusEl.className='status';
+  resultBox.style.display='none';
+  stopLiveLoop();
+  hiddenVideos.innerHTML='';
+  clips = [];
+}
+
+function stopLiveLoop(){
+  previewPlaying = false;
+  if(liveLoopId){ cancelAnimationFrame(liveLoopId); liveLoopId=null; }
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  if(recorder && recorder.state==='recording'){ try{ recorder.stop(); }catch(e){} }
+}
+
+renderRows();
+
+buildBtn.addEventListener('click', async ()=>{
+  buildBtn.disabled = true;
+  buildBtn.textContent = 'Laden...';
+  statusEl.className='status';
+  statusEl.textContent='';
+
+  try{
+    const activeRows = rows.filter(r=>r.file);
+    canvas.width = parseInt(canvasW.value) || 1080;
+    canvas.height = activeRows.reduce((s,r)=> s + (r.height||0), 0);
+
+    hiddenVideos.innerHTML='';
+    const els = await Promise.all(activeRows.map(r => loadVideo(r.file)));
+
+    let cursorY = 0;
+    clips = els.map((el,i)=>{
+      const r = activeRows[i];
+      const stripY = cursorY;
+      const stripH = r.height;
+      const boxW = r.width;
+      const boxX = (canvas.width - boxW)/2;
+      cursorY += stripH;
+      const c = { el, userScale:1, stripY, stripH, boxX, boxW };
+      computeCover(c);
+      return c;
+    });
+
+    stagePanel.style.display='block';
+    buildBtn.disabled = false;
+    buildBtn.textContent = 'Live voorbeeld bouwen';
+    buildZoomControls();
+    drawStaticFrame();
+    setupDrag();
+
+    const perfWarning = document.getElementById('perfWarning');
+    if(clips.length > 5){
+      perfWarning.style.display='block';
+      perfWarning.innerHTML = `⚠ iPhones kunnen doorgaans maar zo'n 4–5 video's tegelijk decoderen. Bij ${clips.length} video's zal export waarschijnlijk vastlopen of flikkeren.<br><br><b>Werk in groepen:</b> maak eerst aparte exports van groepjes van max. 5 video's. Gebruik daarna die geëxporteerde bestanden opnieuw als "video" in een nieuwe ronde, en exporteer die laatste keer.`;
+    } else {
+      perfWarning.style.display='none';
+    }
+
+    stagePanel.scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(err){
+    statusEl.className='status err';
+    statusEl.textContent = 'Kon video\'s niet laden: ' + err.message;
+    buildBtn.disabled = false;
+    buildBtn.textContent = 'Live voorbeeld bouwen';
+  }
+});
+
+function loadVideo(file){
+  return new Promise((resolve, reject)=>{
+    const v = document.createElement('video');
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline','');
+    v.loop = true;
+    v.preload = 'auto';
+    v.src = URL.createObjectURL(file);
+    hiddenVideos.appendChild(v); // must be in the DOM for reliable decode on iOS
+
+    let done = false;
+    const finish = ()=>{
+      if(done) return;
+      done = true;
+      resolve(v);
+    };
+    v.addEventListener('loadedmetadata', ()=>{
+      // force a frame to decode
+      const p = v.play();
+      if(p && p.catch) p.catch(()=>{});
+      setTimeout(()=>{ try{ v.pause(); }catch(e){} finish(); }, 60);
+    }, {once:true});
+    v.addEventListener('error', ()=> reject(new Error(file.name)), {once:true});
+    setTimeout(finish, 4000); // failsafe
+  });
+}
+
+function computeCover(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  c.baseScale = Math.max(c.boxW / vw, c.stripH / vh);
+  recenter(c);
+}
+
+function recenter(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  const scale = c.baseScale * c.userScale;
+  const dw = vw*scale, dh = vh*scale;
+  c.dx = c.boxX + (c.boxW - dw)/2;
+  c.dy = c.stripY + (c.stripH - dh)/2;
+}
+
+function clampClip(c){
+  const vw = c.el.videoWidth || 1, vh = c.el.videoHeight || 1;
+  const scale = c.baseScale * c.userScale;
+  const dw = vw*scale, dh = vh*scale;
+  const minDx = c.boxX + c.boxW - dw, maxDx = c.boxX;
+  const minDy = c.stripY + c.stripH - dh, maxDy = c.stripY;
+  c.dx = Math.min(maxDx, Math.max(minDx, c.dx));
+  c.dy = Math.min(maxDy, Math.max(minDy, c.dy));
+}
+
+function drawFrame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  clips.forEach(c=>{
+    const vw = c.el.videoWidth, vh = c.el.videoHeight;
+    if(!vw||!vh) return;
+    const scale = c.baseScale * c.userScale;
+    const dw = vw*scale, dh = vh*scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(c.boxX, c.stripY, c.boxW, c.stripH);
+    ctx.clip();
+    ctx.drawImage(c.el, c.dx, c.dy, dw, dh);
+    ctx.restore();
+  });
+}
+
+function drawStaticFrame(){
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  drawFrame();
+}
+
+let previewPlaying = false;
+function startLivePreview(){
+  previewPlaying = true;
+  playToggle.textContent = '⏸ Beweging stoppen';
+  clips.forEach(c=>{
+    c.el.currentTime = 0;
+    const p = c.el.play();
+    if(p && p.catch) p.catch(()=>{});
+  });
+  const loop = ()=>{
+    drawFrame();
+    if(previewPlaying) liveLoopId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+function stopPreviewPlayback(){
+  previewPlaying = false;
+  playToggle.textContent = '▶ Beweging tonen';
+  if(liveLoopId){ cancelAnimationFrame(liveLoopId); liveLoopId=null; }
+  clips.forEach(c=>{ try{ c.el.pause(); }catch(e){} });
+  drawFrame();
+}
+
+const playToggle = document.getElementById('playToggle');
+playToggle.addEventListener('click', ()=>{
+  if(previewPlaying) stopPreviewPlayback();
+  else startLivePreview();
+});
+
+function buildZoomControls(){
+  zoomControls.innerHTML='';
+  clips.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className='zoomrow';
+    row.innerHTML = `
+      <span class="lbl">Video ${i+1}</span>
+      <input type="range" min="100" max="300" value="100" data-idx="${i}">
+      <button data-reset="${i}">reset</button>
+    `;
+    zoomControls.appendChild(row);
+    row.querySelector('input').addEventListener('input', (e)=>{
+      c.userScale = parseInt(e.target.value)/100;
+      recenter(c);
+      if(!previewPlaying) drawFrame();
+    });
+    row.querySelector('button').addEventListener('click', ()=>{
+      c.userScale = 1;
+      row.querySelector('input').value = 100;
+      recenter(c);
+      if(!previewPlaying) drawFrame();
+    });
+  });
+}
+
+function setupDrag(){
+  canvas.onpointerdown = (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const scaleFactor = canvas.width / rect.width;
+    const cy = (e.clientY - rect.top) * scaleFactor;
+    const idx = clips.findIndex(c => cy >= c.stripY && cy < c.stripY + c.stripH);
+    if(idx===-1) return;
+    dragging = {
+      index: idx,
+      startClientX: e.clientX, startClientY: e.clientY,
+      startDx: clips[idx].dx, startDy: clips[idx].dy,
+      scaleFactor
+    };
+    canvas.setPointerCapture(e.pointerId);
+  };
+  canvas.onpointermove = (e)=>{
+    if(!dragging) return;
+    const c = clips[dragging.index];
+    const dxPix = (e.clientX - dragging.startClientX) * dragging.scaleFactor;
+    const dyPix = (e.clientY - dragging.startClientY) * dragging.scaleFactor;
+    c.dx = dragging.startDx + dxPix;
+    c.dy = dragging.startDy + dyPix;
+    clampClip(c);
+    if(!previewPlaying) drawFrame();
+  };
+  const end = ()=>{ dragging=null; };
+  canvas.onpointerup = end;
+  canvas.onpointercancel = end;
+}
+
+function pickMimeType(){
+  const candidates = [
+    'video/mp4;codecs=h264,aac',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  return candidates.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+}
+
+exportBtn.addEventListener('click', async ()=>{
+  if(!window.MediaRecorder){
+    statusEl.className='status err';
+    statusEl.textContent='Deze browser ondersteunt geen video-opname.';
+    return;
+  }
+  exportBtn.disabled = true;
+  resultBox.style.display='none';
+  statusEl.className='status active';
+  statusEl.textContent = 'Bezig met exporteren...';
+
+  try{
+    const wantAudio = document.getElementById('audioToggle').checked;
+    let audioTracks = [];
+    if(wantAudio){
+      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended') await audioCtx.resume();
+
+      const dest = audioCtx.createMediaStreamDestination();
+      clips.forEach(c=>{
+        try{
+          let src = audioSourceMap.get(c.el);
+          if(!src){
+            src = audioCtx.createMediaElementSource(c.el);
+            audioSourceMap.set(c.el, src);
+          }
+          src.connect(dest);
+        }catch(e){ /* no audio track or already routed */ }
+      });
+      audioTracks = dest.stream.getAudioTracks();
+    }
+
+    const fps = clips.length > 8 ? 20 : 30;
+    const canvasStream = canvas.captureStream(fps);
+    const combined = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioTracks
+    ]);
+
+    const mimeType = pickMimeType();
+    if(!mimeType) throw new Error('geen ondersteund video-formaat gevonden');
+
+    // push bitrate as high as reasonably possible to limit re-encode quality loss
+    const pixelCount = canvas.width * canvas.height;
+    const videoBitsPerSecond = Math.min(20_000_000, Math.max(8_000_000, Math.round(pixelCount * 0.12)));
+
+    const chunks = [];
+    recorder = new MediaRecorder(combined, {mimeType, videoBitsPerSecond});
+    recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+    recorder.onerror = (e) => {
+      statusEl.className='status err';
+      statusEl.textContent = 'Opname-fout: ' + (e.error ? e.error.message : 'onbekend');
+      exportBtn.disabled = false;
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, {type: mimeType.split(';')[0]});
+      const url = URL.createObjectURL(blob);
+      resultVideo.src = url;
+      resultBox.style.display = 'block';
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      downloadLink.href = url;
+      downloadLink.download = 'stapel.' + ext;
+      downloadLink.style.display = 'block';
+      statusEl.className='status';
+      statusEl.textContent = 'Klaar.';
+      exportBtn.disabled = false;
+      drawStaticFrame();
+    };
+
+    stopLiveLoop();
+    clips.forEach(c=>{ c.el.currentTime = 0; const p=c.el.play(); if(p&&p.catch) p.catch(()=>{}); });
+    recorder.start();
+
+    const rec = ()=>{ drawFrame(); if(recorder.state==='recording') liveLoopId = requestAnimationFrame(rec); };
+    rec();
+
+    const longest = clips.reduce((a,b)=> (b.el.duration||0) > (a.el.duration||0) ? b : a).el;
+    const dur = longest.duration || 0;
+    const check = setInterval(()=>{
+      if(recorder.state!=='recording'){ clearInterval(check); return; }
+      const elapsed = longest.currentTime || 0;
+      statusEl.textContent = `Bezig met exporteren... ${elapsed.toFixed(1)}s / ${dur.toFixed(1)}s`;
+      if(elapsed >= dur - 0.05){
+        clearInterval(check);
+        recorder.stop();
+      }
+    }, 150);
+  }catch(err){
+    statusEl.className='status err';
+    statusEl.textContent = 'Export mislukt: ' + err.message;
+    exportBtn.disabled = false;
+    drawStaticFrame();
+  }
+});
+</script>
+</body>
+</html>
