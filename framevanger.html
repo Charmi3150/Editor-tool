@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Framevanger</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Framevanger">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFDF8">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Gochi+Hand&display=swap">
+<style>
+/* Layout: one-screen app — header, video stage that fills, timecode row, filmstrip scrubber, transport bar */
+:root{
+  /* Editor huisstijl */
+  --cream:#F2EFE6; --card:#FFFDF8; --blue:#1F3FBF; --blue-deep:#162F96; --blue-soft:#E3E7F8; --hair:#D9D6CB; --danger:#C8432F;
+  --bg:#F2EFE6; --panel:#FFFDF8; --ink:#15173A; --muted:#6C6F88; --line:#D9D6CB;
+  --accent:#1F3FBF; --accent-soft:#E3E7F8; --stage:#15173A; --sheet:#FFFDF8f2;
+  --display:'Archivo',system-ui,-apple-system,sans-serif;
+  --mono:'Archivo',system-ui,-apple-system,sans-serif;
+  --f-hand:'Gochi Hand',cursive;
+}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--panel)}
+html,body{height:100%}
+body{margin:0;font-size:14px;background:var(--bg);color:var(--ink);font-family:var(--display);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:17px;font-weight:800;margin:0;letter-spacing:-.01em}
+.linkbtn{background:none;border:0;color:var(--accent);font:600 15px var(--display);padding:6px 0;cursor:pointer}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:0;background:transparent;color:var(--accent);
+  display:grid;place-items:center;cursor:pointer}
+.iconbtn svg{width:24px;height:24px}
+
+.stage{flex:1;min-height:0;position:relative;background:var(--stage);display:grid;place-items:center;overflow:hidden}
+video{max-width:100%;max-height:100%;width:auto;height:auto;display:block}
+.empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px;max-width:340px}
+.empty .frameicon{width:88px;height:64px;border:2px solid var(--accent);border-radius:10px;position:relative;
+  background:repeating-linear-gradient(90deg,transparent 0 10px,var(--accent-soft) 10px 20px)}
+.empty h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.empty p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+.primary{background:var(--accent);color:#fff;border:0;border-radius:14px;padding:13px 22px;font:700 15px var(--display);cursor:pointer}
+.busy{position:absolute;inset:auto 0 12px;margin:auto;width:max-content;max-width:90%;background:var(--sheet);
+  border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--muted)}
+
+.timerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:10px 6px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.tc{font:600 17px var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.fi{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+
+.stripwrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));position:relative}
+.strip{position:relative;height:64px;border-radius:14px;border:2px solid var(--accent);overflow:hidden;
+  background:var(--stage);touch-action:none;cursor:ew-resize}
+.thumbs{position:absolute;inset:0;display:flex}
+.thumbs canvas{flex:1;min-width:0;height:100%;object-fit:cover;display:block}
+.played{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--accent) 45%,transparent);mix-blend-mode:multiply;pointer-events:none}
+.head{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:#fff;border-radius:3px;
+  box-shadow:0 0 0 1.5px var(--accent),0 2px 6px #0006;pointer-events:none}
+.speedbtn{position:absolute;right:calc(max(16px,env(safe-area-inset-right,0px)) + 8px);top:8px;height:48px;min-width:52px;padding:0 10px;
+  border-radius:12px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);
+  font:700 13px var(--mono);display:flex;align-items:center;gap:6px;cursor:pointer;z-index:3}
+.speedbtn svg{width:18px;height:18px}
+.hint{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
+
+.menu{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:76px;width:min(300px,calc(100% - 32px));
+  background:var(--sheet);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);
+  border-radius:18px;overflow:hidden;box-shadow:0 18px 50px #0003;z-index:5}
+.menu h3{margin:0;padding:12px 18px;font-size:13px;font-weight:600;color:var(--muted);text-align:center;border-bottom:1px solid var(--line)}
+.menu button{width:100%;display:flex;align-items:center;gap:10px;padding:14px 18px;background:none;border:0;
+  border-bottom:1px solid var(--line);color:var(--ink);font:600 18px var(--display);cursor:pointer;text-align:left}
+.menu button:last-child{border-bottom:0}
+.menu .chk{width:18px;color:var(--accent);font-weight:800}
+.menu .lbl{flex:1}
+.menu .badge{width:32px;height:32px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;font:600 12px var(--mono);color:var(--muted)}
+
+.transport{display:flex;justify-content:space-around;align-items:center;gap:8px;padding-block:12px 14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tbtn{width:60px;height:56px;border-radius:16px;border:0;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;touch-action:manipulation}
+.tbtn svg{width:28px;height:28px}
+.tbtn:active{background:var(--accent-soft)}
+.tbtn.save{background:var(--accent-soft);color:var(--accent);width:68px}
+.tbtn:disabled{opacity:.35}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:#0007;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);width:100%;max-width:560px;border-radius:22px 22px 0 0;max-height:92%;overflow:auto;
+  padding-block:16px calc(18px + env(safe-area-inset-bottom,0px));
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px}
+.sheet .top{display:flex;justify-content:space-between;align-items:center}
+.sheet h2{margin:0;font-size:18px;font-weight:800}
+.sheet img{border-radius:12px;max-height:52vh;object-fit:contain;background:var(--stage);width:100%;-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+.meta{font:500 12px var(--mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px}
+.note{font-size:13px;color:var(--muted);line-height:1.45;margin:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .primary{flex:1}
+.ghost{background:var(--accent-soft);color:var(--accent);border:0;border-radius:14px;padding:13px 18px;font:700 15px var(--display);cursor:pointer}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1;min-width:52px;padding:10px 8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 14px var(--display);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+[hidden]{display:none!important}
+img{max-width:100%}
+.hdrright{display:flex;align-items:center;gap:2px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.gallery figure{margin:0;position:relative;border-radius:10px;overflow:hidden;background:var(--stage);aspect-ratio:3/4;cursor:pointer}
+.gallery img{width:100%;height:100%;object-fit:cover;display:block;border-radius:0;max-height:none}
+.gallery figcaption{position:absolute;inset:auto 0 0;padding:4px 6px;font:500 10px var(--mono);color:#fff;background:linear-gradient(transparent,#000a)}
+.input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 16px var(--display);-webkit-user-select:auto;user-select:auto}
+.danger{background:none;border:0;color:#d33a4a;font:600 14px var(--display);cursor:pointer;padding:8px 0}
+.status{font:500 12px var(--mono);color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:30;max-width:90%}
+@media (prefers-reduced-motion:no-preference){.menu,.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(12px);opacity:.6}}}
+
+/* ===== Editor huisstijl — componenten ===== */
+.display{font-family:var(--display);font-weight:800;font-stretch:72%;text-transform:uppercase;line-height:.86;letter-spacing:-.005em}
+.hand{font-family:var(--f-hand);font-weight:400}
+.ed-topbar{display:flex;align-items:center;gap:12px;min-width:0}
+.ed-back{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:var(--card);border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;text-decoration:none}
+.ed-back svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ed-title h1{font-size:28px;margin:0;color:var(--ink)}
+.ed-title .hand{font-size:15px;color:var(--blue);margin-top:1px;white-space:nowrap}
+header{border-bottom:1.5px solid var(--ink)}
+.iconbtn{border:1.5px solid var(--ink);color:var(--ink);border-radius:12px;width:40px;height:40px}
+.iconbtn svg{width:20px;height:20px}
+.pillbtn{background:var(--blue);color:#fff;border:0;border-radius:999px;padding:10px 15px;font:700 13px var(--display);cursor:pointer;white-space:nowrap}
+.hdrright{gap:6px}
+.empty h2{font-family:var(--display);font-weight:800;font-stretch:72%;text-transform:uppercase;font-size:34px;line-height:.9;color:#fff;letter-spacing:-.005em}
+.empty p{color:rgba(255,255,255,.75)}
+.empty .hand{color:#fff;font-size:19px;margin-top:-6px}
+.empty .frameicon{border:2.5px solid #fff;border-radius:12px;background:repeating-linear-gradient(90deg,transparent 0 10px,rgba(255,255,255,.18) 10px 20px)}
+.primary{border-radius:999px;font:800 16px var(--display);font-stretch:80%;letter-spacing:.04em;text-transform:uppercase;padding:14px 24px}
+.primary:active{background:var(--blue-deep)}
+.ghost{border-radius:999px;background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.busy{background:var(--card);border:1.5px solid var(--ink);color:var(--ink);font-weight:600}
+.tc{font-weight:800;font-stretch:80%;font-size:22px;color:var(--ink)}
+.fi{font-weight:600}
+.strip{border:1.5px solid var(--ink);border-radius:16px}
+.played{background:color-mix(in srgb,var(--blue) 40%,transparent)}
+.head{box-shadow:0 0 0 1.5px var(--blue),0 2px 6px #0006}
+.speedbtn{border:1.5px solid var(--ink);background:var(--card);border-radius:999px;font-weight:700}
+.menu{background:var(--card);border:1.5px solid var(--ink);border-radius:22px;box-shadow:none}
+.menu h3{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11.5px}
+.menu .badge{border-color:var(--hair)}
+.transport{border-top:1.5px solid var(--hair);padding-top:14px}
+.tbtn{border-radius:50%;width:58px;height:58px;border:1.5px solid var(--ink)}
+.tbtn.save{background:var(--blue);color:#fff;border-color:var(--blue);width:66px;height:66px}
+.tbtn.save:active{background:var(--blue-deep)}
+.scrim{background:rgba(21,23,58,.55)}
+.sheet{border:1.5px solid var(--ink);border-bottom:0;border-radius:26px 26px 0 0}
+.sheet h2{font-family:var(--display);font-weight:800;font-stretch:72%;text-transform:uppercase;font-size:28px;line-height:1}
+.sheet img{border-radius:16px}
+.linkbtn{color:var(--blue);font-weight:700}
+.field label{letter-spacing:.1em}
+.seg button{border-radius:999px;border:1.5px solid var(--ink);background:transparent;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.gallery figure{border-radius:14px}
+.input{border:1.5px solid var(--hair);border-radius:14px;background:#fff}
+.danger{color:var(--danger)}
+.toast{background:var(--ink);color:#fff}
+.row .primary{font-size:15px;font-stretch:100%;letter-spacing:0;text-transform:none}
+.ed-title{min-width:0}
+@media (max-width:420px){.ed-title .hand{display:none}.ed-title h1{font-size:22px}.hdrright{gap:4px}.iconbtn{width:38px;height:38px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="ed-topbar">
+      <a class="ed-back" href="index.html" aria-label="Terug naar overzicht"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+      <div class="ed-title">
+        <h1 class="display">Framevanger</h1>
+        <div class="hand">frame per frame</div>
+      </div>
+    </div>
+    <div class="hdrright">
+    <button class="iconbtn" id="openBtn" aria-label="Video kiezen" title="Video kiezen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/><path d="M9.5 9.5v5M7 12h5"/></svg></button>
+    <button class="iconbtn" id="galBtn" aria-label="Mijn frames">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </button>
+    <button class="iconbtn" id="setBtn" aria-label="Instellingen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">
+      <div class="frameicon"></div>
+      <h2>Scherpe foto's uit je filmpjes</h2>
+      <div class="hand">vang het perfecte moment</div>
+      <p>Kies een video, scrol frame per frame tot het juiste moment en bewaar dat beeld op volle resolutie.</p>
+      <button class="primary" id="openBtn2">Video kiezen</button>
+    </div>
+    <video id="vid" playsinline muted preload="auto" hidden></video>
+    <div class="busy" id="busy" hidden></div>
+  </div>
+
+  <div class="timerow">
+    <span class="tc" id="tc">00:00.00</span>
+    <span class="fi" id="fi">frame — · — fps</span>
+  </div>
+
+  <div class="stripwrap">
+    <div class="strip" id="strip">
+      <div class="thumbs" id="thumbs"></div>
+      <div class="played" id="played" style="width:0"></div>
+      <div class="head" id="head" style="left:0"></div>
+    </div>
+    <button class="speedbtn" id="speedBtn" aria-label="Scrol- en afspeelsnelheid">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4"/><path d="M12 5v1.5M5 13h1.5M17.5 13H19"/></svg>
+      <span id="speedLbl">1×</span>
+    </button>
+    <div class="hint" id="hint">Sleep over de filmstrip om te scrollen</div>
+  </div>
+
+  <div class="transport">
+    <button class="tbtn" id="playBtn" aria-label="Afspelen" disabled>
+      <svg id="playIco" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"/></svg>
+    </button>
+    <button class="tbtn" id="prevBtn" aria-label="Vorig frame" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <button class="tbtn" id="nextBtn" aria-label="Volgend frame" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+    <button class="tbtn save" id="grabBtn" aria-label="Frame bewaren" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="menu" id="menu" hidden role="menu">
+  <h3>Scrol- en afspeelsnelheid</h3>
+  <div id="menuItems"></div>
+</div>
+
+<div class="scrim" id="grabSheet" hidden>
+  <div class="sheet">
+    <div class="top"><h2>Frame bewaard</h2><button class="linkbtn" id="closeGrab">Klaar</button></div>
+    <img id="grabImg" alt="Gekozen frame op volle resolutie">
+    <div class="meta" id="grabMeta"></div>
+    <div class="row">
+      <button class="primary" id="saveBtn">Opslaan op toestel</button>
+      <button class="ghost" id="cloudBtn">Naar cloud</button>
+    </div>
+    <p class="note" id="grabNote">Op iPhone opent "Opslaan op toestel" het deelmenu: kies <b>Bewaar afbeelding</b> om de foto in Foto's te zetten. "Naar cloud" bewaart het frame in je Supabase-galerij.</p>
+  </div>
+</div>
+
+<div class="scrim" id="setSheet" hidden>
+  <div class="sheet">
+    <div class="top"><h2>Instellingen</h2><button class="linkbtn" id="closeSet">Klaar</button></div>
+    <div class="field">
+      <label>Bestandsformaat</label>
+      <div class="seg" id="fmtSeg">
+        <button data-v="png">PNG · verliesloos</button>
+        <button data-v="jpg">JPEG · 100%</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Beelden per seconde</label>
+      <div class="seg" id="fpsSeg">
+        <button data-v="auto">Auto</button><button data-v="24">24</button><button data-v="25">25</button>
+        <button data-v="30">30</button><button data-v="50">50</button><button data-v="60">60</button><button data-v="120">120</button>
+      </div>
+      <p class="note" id="fpsNote">Auto meet de framerate van je video. Kies zelf als stappen een frame overslaan of dubbel tonen.</p>
+    </div>
+    <div class="field">
+      <label>Automatisch naar cloud</label>
+      <div class="seg" id="autoSeg">
+        <button data-v="0">Uit</button><button data-v="1">Aan</button>
+      </div>
+      <p class="note">Aan: elk bewaard frame gaat meteen naar je galerij.</p>
+    </div>
+    <p class="note">Foto's worden op de originele resolutie van de video bewaard. De video zelf wordt nooit geüpload, enkel de frames die je naar de cloud stuurt.</p>
+  </div>
+</div>
+
+<div class="scrim" id="galSheet" hidden>
+  <div class="sheet">
+    <div class="top"><h2>Mijn frames</h2><button class="linkbtn" id="closeGal">Klaar</button></div>
+    <div class="status" id="galStatus"></div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+</div>
+
+<div class="scrim" id="viewSheet" hidden>
+  <div class="sheet">
+    <div class="top"><button class="linkbtn" id="backView">‹ Galerij</button><button class="danger" id="delBtn">Verwijderen</button></div>
+    <img id="viewImg" alt="Bewaard frame">
+    <div class="meta" id="viewMeta"></div>
+    <div class="row"><button class="primary" id="viewSave">Opslaan op toestel</button></div>
+  </div>
+</div>
+
+
+
+<input type="file" id="file" accept="video/*" hidden>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const vid=$('vid'), strip=$('strip');
+const SPEEDS=[
+  {k:'snail',lbl:'Slak',short:'🐌',badge:'01',scrub:0,play:0},
+  {k:'0.1',lbl:'0.1×',short:'0.1×',badge:'10',scrub:.1,play:.1},
+  {k:'0.25',lbl:'0.25×',short:'.25×',badge:'25',scrub:.25,play:.25},
+  {k:'0.5',lbl:'0.5×',short:'0.5×',badge:'50',scrub:.5,play:.5},
+  {k:'1',lbl:'1.0×',short:'1×',badge:'',scrub:1,play:1},
+];
+const store={get(k,d){try{const v=localStorage.getItem('fv_'+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem('fv_'+k,v)}catch(e){}}};
+let speed=SPEEDS.find(s=>s.k===store.get('speed','snail'))||SPEEDS[0];
+let fmt=store.get('fmt','png'), fpsPref=store.get('fps','auto');
+let fps=30, detectedFps=null, fileName='video', loaded=false, url=null;
+let lastBlob=null, lastName='';
+SPEEDS[0].short='Slak';
+
+/* ---------- precise seeking ---------- */
+let pending=null;
+function frameCount(){return Math.max(1,Math.floor(vid.duration*fps+1e-6))}
+function curFrame(){return Math.min(frameCount()-1,Math.max(0,Math.floor(vid.currentTime*fps+1e-3)))}
+function timeForFrame(f){f=Math.min(frameCount()-1,Math.max(0,f));return Math.min(vid.duration-0.001,(f+0.5)/fps)}
+let shownFrame=0;
+function seekFrame(f){
+  f=Math.min(frameCount()-1,Math.max(0,Math.round(f)));
+  shownFrame=f; renderTime(f);
+  const t=timeForFrame(f);
+  if(vid.seeking){pending=t;return}
+  vid.currentTime=t;
+}
+vid.addEventListener('seeked',()=>{
+  if(pending!=null){const t=pending;pending=null;vid.currentTime=t;}
+});
+function settle(){return new Promise(r=>{if(!vid.seeking&&pending==null)return r();const h=()=>{if(pending==null&&!vid.seeking){vid.removeEventListener('seeked',h);r()}};vid.addEventListener('seeked',h)})}
+
+/* ---------- UI render ---------- */
+function fmtTC(t){const m=Math.floor(t/60),s=t-m*60;return String(m).padStart(2,'0')+':'+s.toFixed(2).padStart(5,'0')}
+function renderTime(f){
+  if(!loaded)return;
+  const t=f/fps;
+  $('tc').textContent=fmtTC(t);
+  $('fi').textContent=`frame ${f+1} / ${frameCount()} · ${fps} fps`;
+  const p=frameCount()>1?f/(frameCount()-1):0;
+  $('played').style.width=(p*100)+'%';
+  $('head').style.left=(p*100)+'%';
+}
+
+/* ---------- loading ---------- */
+function openPicker(){$('file').click()}
+$('openBtn').onclick=openPicker;$('openBtn2').onclick=openPicker;
+$('file').onchange=e=>{const f=e.target.files[0];if(f)load(f);e.target.value=''};
+function busy(msg){$('busy').hidden=!msg;$('busy').textContent=msg||''}
+
+function load(file){
+  stopPlay();
+  if(url)URL.revokeObjectURL(url);
+  url=URL.createObjectURL(file);
+  fileName=(file.name||'video').replace(/\.[^.]+$/,'');
+  loaded=false;
+  $('thumbs').innerHTML='';
+  vid.hidden=false;$('empty').hidden=true;
+  busy('Video laden…');
+  vid.src=url;vid.load();
+  vid.addEventListener('loadedmetadata',async function once(){
+    vid.removeEventListener('loadedmetadata',once);
+    busy('Framerate meten…');
+    detectedFps=await detectFps();
+    applyFps();
+    loaded=true;
+    ['playBtn','prevBtn','nextBtn','grabBtn'].forEach(id=>$(id).disabled=false);
+    busy('');
+    seekFrame(0);
+    buildThumbs(url);
+  });
+  vid.onerror=()=>{busy('');toast('Deze video kan niet geopend worden in de browser.')};
+}
+function applyFps(){
+  fps = fpsPref==='auto' ? (detectedFps||30) : +fpsPref;
+  $('fpsNote').textContent = detectedFps
+    ? `Gemeten: ${detectedFps} fps. Auto gebruikt die waarde. Kies zelf als stappen een frame overslaan of dubbel tonen.`
+    : 'Auto meet de framerate van je video. Kies zelf als stappen een frame overslaan of dubbel tonen.';
+}
+function snapFps(v){const common=[23.976,24,25,29.97,30,48,50,59.94,60,90,100,120,240];
+  let best=common.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);
+  if(Math.abs(best-v)/v<0.04)return Math.round(best);return Math.round(v)}
+async function detectFps(){
+  if(!('requestVideoFrameCallback' in HTMLVideoElement.prototype))return null;
+  return new Promise(res=>{
+    const times=[];let done=false;
+    const finish=v=>{if(done)return;done=true;vid.pause();vid.playbackRate=1;res(v)};
+    const cb=(now,md)=>{
+      times.push(md.mediaTime);
+      if(times.length<16&&!done)vid.requestVideoFrameCallback(cb);
+      else{
+        const d=[];for(let i=1;i<times.length;i++){const x=times[i]-times[i-1];if(x>0.001)d.push(x)}
+        d.sort((a,b)=>a-b);
+        finish(d.length?snapFps(1/d[Math.floor(d.length/2)]):null);
+      }
+    };
+    vid.muted=true;vid.currentTime=0;
+    vid.requestVideoFrameCallback(cb);
+    vid.play().catch(()=>finish(null));
+    setTimeout(()=>finish(null),2500);
+  });
+}
+async function buildThumbs(src){
+  const n=Math.max(6,Math.min(14,Math.round(strip.clientWidth/56)));
+  const box=$('thumbs');box.innerHTML='';
+  const cs=[];for(let i=0;i<n;i++){const c=document.createElement('canvas');c.width=96;c.height=128;box.appendChild(c);cs.push(c)}
+  const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.src=src;
+  await new Promise(r=>{v.onloadeddata=r;v.onerror=r;setTimeout(r,4000)});
+  for(let i=0;i<n;i++){
+    if(src!==url)return;
+    await new Promise(r=>{const h=()=>{v.removeEventListener('seeked',h);r()};v.addEventListener('seeked',h);v.currentTime=Math.min(v.duration-0.05,(i+0.5)/n*v.duration);setTimeout(r,1500)});
+    const c=cs[i],ctx=c.getContext('2d');const vw=v.videoWidth||1,vh=v.videoHeight||1;
+    const s=Math.max(c.width/vw,c.height/vh);ctx.drawImage(v,(c.width-vw*s)/2,(c.height-vh*s)/2,vw*s,vh*s);
+  }
+  v.removeAttribute('src');v.load();
+}
+
+/* ---------- scrubbing ---------- */
+let drag=null;
+strip.addEventListener('pointerdown',e=>{
+  if(!loaded)return;stopPlay();
+  strip.setPointerCapture(e.pointerId);
+  drag={x:e.clientX,f:shownFrame,moved:false,acc:0};
+});
+strip.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x;
+  if(Math.abs(dx)>3)drag.moved=true;
+  if(!drag.moved)return;
+  const w=strip.clientWidth, total=frameCount();
+  let f;
+  if(speed.k==='snail') f=drag.f+Math.round(dx/18);           // 1 frame per 18px
+  else f=drag.f+dx/w*total*speed.scrub;
+  seekFrame(f);
+});
+const endDrag=e=>{
+  if(!drag)return;
+  if(!drag.moved&&speed.k==='1'){const r=strip.getBoundingClientRect();seekFrame((e.clientX-r.left)/r.width*(frameCount()-1))}
+  drag=null;
+};
+strip.addEventListener('pointerup',endDrag);strip.addEventListener('pointercancel',()=>drag=null);
+
+/* ---------- frame stepping (hold to repeat) ---------- */
+function holdStep(btn,dir){
+  let t1,t2;
+  const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+  btn.addEventListener('pointerdown',e=>{if(!loaded)return;e.preventDefault();stopPlay();seekFrame(shownFrame+dir);
+    t1=setTimeout(()=>{t2=setInterval(()=>{if(!vid.seeking)seekFrame(shownFrame+dir)},70)},420)});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,stop));
+}
+holdStep($('prevBtn'),-1);holdStep($('nextBtn'),1);
+document.addEventListener('keydown',e=>{
+  if(!loaded||!$('grabSheet').hidden||!$('setSheet').hidden)return;
+  if(e.key==='ArrowLeft'){e.preventDefault();stopPlay();seekFrame(shownFrame-(e.shiftKey?10:1))}
+  if(e.key==='ArrowRight'){e.preventDefault();stopPlay();seekFrame(shownFrame+(e.shiftKey?10:1))}
+  if(e.key===' '){e.preventDefault();togglePlay()}
+});
+
+/* ---------- playback ---------- */
+let playing=false,snailTimer=null,rafId=null;
+function setPlayIcon(){$('playIco').innerHTML=playing?'<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>':'<path d="M7 4.5v15l12.5-7.5z"/>';$('playBtn').setAttribute('aria-label',playing?'Pauzeren':'Afspelen')}
+function togglePlay(){playing?stopPlay():startPlay()}
+function startPlay(){
+  if(!loaded)return;playing=true;setPlayIcon();
+  if(shownFrame>=frameCount()-1)seekFrame(0);
+  if(speed.k==='snail'){snailTimer=setInterval(()=>{if(vid.seeking)return;if(shownFrame>=frameCount()-1)return stopPlay();seekFrame(shownFrame+1)},250);return}
+  vid.playbackRate=speed.play;vid.play().catch(()=>stopPlay());
+  const tick=()=>{if(!playing)return;shownFrame=curFrame();renderTime(shownFrame);rafId=requestAnimationFrame(tick)};tick();
+}
+function stopPlay(){
+  if(!playing)return;playing=false;setPlayIcon();
+  clearInterval(snailTimer);cancelAnimationFrame(rafId);
+  if(!vid.paused){vid.pause();seekFrame(curFrame())}
+}
+vid.addEventListener('ended',()=>{if(playing){playing=false;setPlayIcon();seekFrame(frameCount()-1)}});
+$('playBtn').onclick=togglePlay;
+
+/* ---------- speed menu ---------- */
+function renderMenu(){
+  $('menuItems').innerHTML=SPEEDS.map(s=>`<button role="menuitemradio" aria-checked="${s===speed}" data-k="${s.k}">
+    <span class="chk">${s===speed?'✓':''}</span><span class="lbl">${s.lbl}</span>${s.badge?`<span class="badge">${s.badge}</span>`:''}</button>`).join('');
+  $('speedLbl').textContent=speed.short;
+  $('hint').textContent=speed.k==='snail'?'Slak: elke korte veeg = één frame':'Sleep over de filmstrip om te scrollen';
+}
+$('speedBtn').onclick=e=>{e.stopPropagation();renderMenu();$('menu').hidden=!$('menu').hidden};
+$('menuItems').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=SPEEDS.find(s=>s.k===b.dataset.k);store.set('speed',speed.k);
+  const wasPlaying=playing;stopPlay();renderMenu();$('menu').hidden=true;if(wasPlaying)startPlay()};
+document.addEventListener('pointerdown',e=>{if(!$('menu').hidden&&!e.target.closest('#menu,#speedBtn'))$('menu').hidden=true});
+
+/* ---------- grab ---------- */
+async function saveToDevice(blob,name){
+  const file=new File([blob],name,{type:blob.type});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]});return true}
+    catch(e){if(e.name==='AbortError')return false}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Gedownload');return true;
+}
+
+$('grabBtn').onclick=async()=>{
+  if(!loaded)return;stopPlay();await settle();
+  const w=vid.videoWidth,h=vid.videoHeight;
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  c.getContext('2d').drawImage(vid,0,0,w,h);
+  const type=fmt==='png'?'image/png':'image/jpeg';
+  busy('Foto maken…');
+  const blob=await new Promise(r=>c.toBlob(r,type,1));
+  busy('');
+  if(!blob){toast('Kon het frame niet vastleggen.');return}
+  lastBlob=blob;
+  const tcName=fmtTC(shownFrame/fps).replace(':','m').replace('.','s');
+  lastName=`${fileName}_${tcName}_f${shownFrame+1}.${fmt}`;
+  const im=$('grabImg');if(im.src)URL.revokeObjectURL(im.src);im.src=URL.createObjectURL(blob);
+  $('grabMeta').innerHTML=`<span>${w} × ${h} px</span><span>${fmt.toUpperCase()}</span><span>${(blob.size/1048576).toFixed(1)} MB</span><span>frame ${shownFrame+1}</span>`;
+  lastMeta={width:w,height:h,frame_index:shownFrame+1,time_sec:+(shownFrame/fps).toFixed(4),fps,video_name:fileName,format:fmt,size_bytes:blob.size};
+  $('cloudBtn').disabled=false;$('cloudBtn').textContent='Naar cloud';
+  $('grabSheet').hidden=false;
+  if(autoCloud&&sb)uploadFrame();
+};
+let lastMeta=null;
+$('saveBtn').onclick=()=>{if(lastBlob)saveToDevice(lastBlob,lastName)};
+$('cloudBtn').onclick=()=>uploadFrame();
+$('closeGrab').onclick=()=>$('grabSheet').hidden=true;
+
+/* ---------- settings ---------- */
+function syncSeg(){
+  document.querySelectorAll('#fmtSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===fmt));
+  document.querySelectorAll('#fpsSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===fpsPref));
+  document.querySelectorAll('#autoSeg button').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.v==='1')===autoCloud));
+}
+$('fmtSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;fmt=b.dataset.v;store.set('fmt',fmt);syncSeg()};
+$('fpsSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;fpsPref=b.dataset.v;store.set('fps',fpsPref);
+  const t=vid.currentTime;applyFps();syncSeg();if(loaded)seekFrame(Math.floor(t*fps))};
+$('setBtn').onclick=()=>{syncSeg();$('setSheet').hidden=false};
+$('closeSet').onclick=()=>$('setSheet').hidden=true;
+[$('grabSheet'),$('setSheet')].forEach(s=>s.addEventListener('click',e=>{if(e.target===s)s.hidden=true}));
+
+/* ---------- Supabase ---------- */
+const CFG=window.FRAMEVANGER_CONFIG||{};
+const BUCKET='frames';
+let sb=null,autoCloud=store.get('auto','0')==='1';
+if(CFG.supabaseUrl&&CFG.supabaseAnonKey&&!CFG.supabaseUrl.includes('JOUW')&&window.supabase){
+  sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:false}});
+}
+function noCloud(){
+  if(!sb){toast('Vul eerst config.js in met je Supabase-gegevens.');return true}
+  return false;
+}
+
+async function uploadFrame(){
+  if(!lastBlob||noCloud())return;
+  const btn=$('cloudBtn');btn.disabled=true;btn.textContent='Uploaden…';
+  const path=`${Date.now()}_${lastName.replace(/[^\w.\-]+/g,'_')}`;
+  const up=await sb.storage.from(BUCKET).upload(path,lastBlob,{contentType:lastBlob.type,upsert:false});
+  if(up.error){btn.disabled=false;btn.textContent='Naar cloud';return toast('Upload mislukt: '+up.error.message)}
+  const ins=await sb.from('frames').insert({...lastMeta,storage_path:path,file_name:lastName});
+  if(ins.error){await sb.storage.from(BUCKET).remove([path]);btn.disabled=false;btn.textContent='Naar cloud';return toast('Opslaan mislukt: '+ins.error.message)}
+  btn.textContent='In de cloud ✓';toast('Bewaard in je galerij');
+}
+
+let galRows=[],viewing=null;
+$('galBtn').onclick=async()=>{
+  if(noCloud())return;
+  $('galSheet').hidden=false;$('galStatus').textContent='Laden…';$('gallery').innerHTML='';
+  const {data,error}=await sb.from('frames').select('*').order('created_at',{ascending:false}).limit(200);
+  if(error){$('galStatus').textContent='Laden mislukt: '+error.message;return}
+  galRows=data;
+  if(!data.length){$('galStatus').textContent='Nog geen frames in de cloud. Bewaar er een met "Naar cloud".';return}
+  $('galStatus').textContent=data.length+' frames';
+  const signed=await sb.storage.from(BUCKET).createSignedUrls(data.map(r=>r.storage_path),3600,{transform:undefined});
+  const urls={};(signed.data||[]).forEach(s=>urls[s.path]=s.signedUrl);
+  $('gallery').innerHTML=data.map((r,i)=>`<figure data-i="${i}"><img loading="lazy" src="${urls[r.storage_path]||''}" alt=""><figcaption>${r.video_name?esc(r.video_name).slice(0,14)+' · ':''}f${r.frame_index}</figcaption></figure>`).join('');
+  data.forEach(r=>r._url=urls[r.storage_path]);
+};
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+$('gallery').onclick=e=>{
+  const f=e.target.closest('figure');if(!f)return;
+  viewing=galRows[+f.dataset.i];
+  $('viewImg').src=viewing._url;
+  const d=new Date(viewing.created_at);
+  $('viewMeta').innerHTML=`<span>${viewing.width} × ${viewing.height} px</span><span>${(viewing.format||'').toUpperCase()}</span><span>frame ${viewing.frame_index}</span><span>${d.toLocaleDateString('nl-BE')}</span>`;
+  $('delBtn').textContent='Verwijderen';$('delBtn').dataset.armed='';
+  $('galSheet').hidden=true;$('viewSheet').hidden=false;
+};
+$('backView').onclick=()=>{$('viewSheet').hidden=true;$('galSheet').hidden=false};
+$('viewSave').onclick=async()=>{
+  if(!viewing)return;
+  const {data,error}=await sb.storage.from(BUCKET).download(viewing.storage_path);
+  if(error)return toast('Ophalen mislukt: '+error.message);
+  saveToDevice(data,viewing.file_name||'frame.png');
+};
+$('delBtn').onclick=async()=>{
+  const b=$('delBtn');
+  if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Tik nogmaals om te verwijderen';return}
+  await sb.storage.from(BUCKET).remove([viewing.storage_path]);
+  const {error}=await sb.from('frames').delete().eq('id',viewing.id);
+  if(error)return toast('Verwijderen mislukt: '+error.message);
+  toast('Verwijderd');$('viewSheet').hidden=true;$('galBtn').click();
+};
+$('closeGal').onclick=()=>$('galSheet').hidden=true;
+[$('galSheet'),$('viewSheet')].forEach(s=>s.addEventListener('click',e=>{if(e.target===s)s.hidden=true}));
+$('autoSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;autoCloud=b.dataset.v==='1';store.set('auto',b.dataset.v);syncSeg()};
+
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400)}
+renderMenu();
+</script>
+</body>
+</html>

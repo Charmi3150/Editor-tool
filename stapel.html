@@ -71,6 +71,8 @@
     cursor:pointer; font-family:inherit;
   }
   .preset-btn:hover{background:var(--blue-soft);border-color:var(--blue);color:var(--blue);}
+  .preset-btn.on, .preset-btn.on:hover{background:var(--blue);border-color:var(--blue);color:#fff;}
+  input[type=number]:disabled{background:var(--cream);color:var(--muted);}
 
   .slot2{
     display:flex; align-items:flex-start; gap:12px;
@@ -190,20 +192,28 @@
       <div class="hand">video's boven elkaar</div>
     </div>
   </header>
-  <p class="sub">Zet meerdere video's boven elkaar in één canvas. Geef per video een eigen breedte en hoogte in pixels, sleep om te verschuiven, zoom om uit te snijden.</p>
+  <p class="sub">Zet meerdere video's boven elkaar in één beeld, bv. een Instagram-reel. Kies een formaat, sleep om te verschuiven, zoom om uit te snijden.</p>
 
   <div class="panel">
-    <h2><span class="step">1</span>Uitvoerbreedte</h2>
-    <div class="field">
-      <label>Breedte (px)</label>
-      <input type="number" id="canvasW" value="1080" min="100" step="1">
+    <h2><span class="step">1</span>Formaat</h2>
+    <div class="presets" id="formatPresets" style="margin:0 0 14px;">
+      <button class="preset-btn" data-w="1080" data-h="1920">Reel 9:16</button>
+      <button class="preset-btn" data-w="1080" data-h="1350">Post 4:5</button>
+      <button class="preset-btn" data-w="1080" data-h="1080">Vierkant 1:1</button>
+      <button class="preset-btn" data-w="1920" data-h="1080">Liggend 16:9</button>
+      <button class="preset-btn" data-w="" data-h="free">Vrij</button>
     </div>
-    <div class="presets">
-      <button class="preset-btn" data-w="1080">1080px</button>
-      <button class="preset-btn" data-w="720">720px</button>
-      <button class="preset-btn" data-w="1440">1440px</button>
+    <div class="row">
+      <div class="field">
+        <label>Breedte (px)</label>
+        <input type="number" id="canvasW" value="1080" min="100" step="1">
+      </div>
+      <div class="field">
+        <label>Hoogte (px)</label>
+        <input type="number" id="canvasH" value="1920" min="100" step="1">
+      </div>
     </div>
-    <div class="hint">Dit is de breedte van het eindresultaat. De totale hoogte wordt automatisch de som van de hoogtes die je hieronder per video ingeeft.</div>
+    <div class="hint" id="formatHint"></div>
   </div>
 
   <div class="panel">
@@ -265,7 +275,11 @@ const resultVideo = document.getElementById('resultVideo');
 const downloadLink = document.getElementById('downloadLink');
 
 // dynamic list of row definitions: {file, width, height}
-let rows = [ { file:null, width: parseInt(canvasW.value)||1080, height:400 } ];
+const canvasH = document.getElementById('canvasH');
+const formatHint = document.getElementById('formatHint');
+let freeHeight = false; // Vrij: hoogte = som van de video-hoogtes
+
+let rows = [ { file:null, width: 1080, height:1920 } ];
 let clips = []; // {el, baseScale, userScale, dx, dy, stripY, stripH, boxX, boxW}
 let liveLoopId = null;
 let recorder = null;
@@ -273,17 +287,50 @@ let audioCtx = null;
 let audioSourceMap = new WeakMap();
 let dragging = null;
 
-document.querySelectorAll('.preset-btn').forEach(b=>{
+function outW(){ return parseInt(canvasW.value) || 1080; }
+function outH(){ return parseInt(canvasH.value) || 1920; }
+
+// Vaste hoogte: verdeel de hoogte gelijk over alle video's en zet de breedte op de canvasbreedte.
+function distributeRows(){
+  if(freeHeight) return;
+  const H = outH(), n = rows.length, base = Math.floor(H / n);
+  rows.forEach((r,i)=>{ r.width = outW(); r.height = i === n-1 ? H - base*(n-1) : base; });
+}
+// Hoogtes zoals ze in het eindresultaat komen (bij vast formaat geschaald tot ze samen de canvashoogte vullen).
+function effectiveHeights(list){
+  if(freeHeight) return list.map(r=> r.height||0);
+  const H = outH(), sum = list.reduce((a,r)=> a + (r.height||0), 0) || 1;
+  let acc = 0;
+  return list.map((r,i)=>{
+    if(i === list.length-1) return H - acc;
+    const h = Math.round((r.height||0) * H / sum); acc += h; return h;
+  });
+}
+function syncFormatUI(){
+  canvasH.disabled = freeHeight;
+  document.querySelectorAll('#formatPresets .preset-btn').forEach(b=>{
+    const on = b.dataset.h === 'free' ? freeHeight : (!freeHeight && +b.dataset.w === outW() && +b.dataset.h === outH());
+    b.classList.toggle('on', on);
+  });
+  formatHint.textContent = freeHeight
+    ? 'Vrij: de hoogte wordt de som van de hoogtes die je hieronder per video ingeeft.'
+    : "De video's vullen samen het volledige formaat. De hoogte wordt eerlijk verdeeld; pas per video aan en de rest schaalt mee.";
+}
+
+document.querySelectorAll('#formatPresets .preset-btn').forEach(b=>{
   b.addEventListener('click', ()=>{
-    canvasW.value = b.dataset.w;
-    resetBuild();
+    if(b.dataset.h === 'free'){ freeHeight = true; }
+    else { freeHeight = false; canvasW.value = b.dataset.w; canvasH.value = b.dataset.h; distributeRows(); }
+    syncFormatUI(); renderRows(); resetBuild();
   });
 });
-canvasW.addEventListener('input', resetBuild);
+canvasW.addEventListener('input', ()=>{ rows.forEach(r=> r.width = outW()); syncFormatUI(); renderRows(); resetBuild(); });
+canvasH.addEventListener('input', ()=>{ distributeRows(); syncFormatUI(); renderRows(); resetBuild(); });
 
 addRowBtn.addEventListener('click', ()=>{
   const last = rows[rows.length-1];
-  rows.push({ file:null, width: last ? last.width : (parseInt(canvasW.value)||1080), height: last ? last.height : 400 });
+  rows.push({ file:null, width: last ? last.width : outW(), height: last ? last.height : 400 });
+  distributeRows();
   renderRows();
   resetBuild();
 });
@@ -291,6 +338,7 @@ addRowBtn.addEventListener('click', ()=>{
 function removeRow(i){
   if(rows.length<=1) return;
   rows.splice(i,1);
+  distributeRows();
   renderRows();
   resetBuild();
 }
@@ -345,10 +393,12 @@ function renderRows(){
 
 function updateTotalInfo(){
   const withFile = rows.filter(r=>r.file);
-  const totalH = withFile.reduce((s,r)=> s + (r.height||0), 0);
-  totalInfo.innerHTML = withFile.length
-    ? `Canvas wordt <b>${canvasW.value}px</b> breed × <b>${totalH}px</b> hoog (som van ${withFile.length} video's).`
-    : `Voeg minstens 1 video toe.`;
+  if(!withFile.length){ totalInfo.innerHTML = 'Voeg minstens 1 video toe.'; return; }
+  const hs = effectiveHeights(withFile);
+  const totalH = hs.reduce((a,b)=>a+b,0);
+  totalInfo.innerHTML = freeHeight
+    ? `Canvas wordt <b>${outW()}px</b> breed × <b>${totalH}px</b> hoog (som van ${withFile.length} video's).`
+    : `Canvas wordt <b>${outW()} × ${outH()}px</b>. Hoogte per video: ${hs.map(h=>'<b>'+h+'px</b>').join(' + ')}.`;
 }
 
 function resetBuild(){
@@ -369,6 +419,7 @@ function stopLiveLoop(){
   if(recorder && recorder.state==='recording'){ try{ recorder.stop(); }catch(e){} }
 }
 
+syncFormatUI();
 renderRows();
 
 buildBtn.addEventListener('click', async ()=>{
@@ -379,8 +430,9 @@ buildBtn.addEventListener('click', async ()=>{
 
   try{
     const activeRows = rows.filter(r=>r.file);
-    canvas.width = parseInt(canvasW.value) || 1080;
-    canvas.height = activeRows.reduce((s,r)=> s + (r.height||0), 0);
+    const heights = effectiveHeights(activeRows);
+    canvas.width = outW();
+    canvas.height = heights.reduce((a,b)=> a + b, 0);
 
     hiddenVideos.innerHTML='';
     const els = await Promise.all(activeRows.map(r => loadVideo(r.file)));
@@ -389,7 +441,7 @@ buildBtn.addEventListener('click', async ()=>{
     clips = els.map((el,i)=>{
       const r = activeRows[i];
       const stripY = cursorY;
-      const stripH = r.height;
+      const stripH = heights[i];
       const boxW = r.width;
       const boxX = (canvas.width - boxW)/2;
       cursorY += stripH;
