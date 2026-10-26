@@ -53,11 +53,6 @@
     margin-bottom: 6px;
     line-height:1.5;
   }
-  section{
-    border-top: 1px solid var(--line);
-    padding-top: 14px;
-  }
-  section:first-of-type{border-top:none; padding-top:0;}
   label{
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 11px;
@@ -310,308 +305,374 @@
   }
   .layer-item .layer-vis{ font-size:13px; }
   .layer-item button:hover{ background: var(--accent-soft); }
+
+  /* ---------- Sidebar groups ---------- */
+  #sidebar{ padding:0; gap:0; }
+  #sideScroll{ flex:1; overflow-y:auto; padding:22px 20px 16px; }
+  .side-head{ margin-bottom:14px; }
+  .back-link{ display:inline-flex;align-items:center;gap:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--line);padding:5px 10px;border-radius:20px;margin-bottom:10px; }
+  details.grp{ border-top:1px solid var(--line); }
+  details.grp:last-of-type{ border-bottom:1px solid var(--line); }
+  details.grp > summary{
+    list-style:none; cursor:pointer; user-select:none;
+    display:flex; align-items:center; gap:8px;
+    padding:13px 2px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:13.5px; font-weight:600; color:var(--ink);
+  }
+  details.grp > summary::-webkit-details-marker{ display:none; }
+  details.grp > summary::before{
+    content:''; width:7px; height:7px; flex-shrink:0;
+    border-right:1.5px solid #a08d76; border-bottom:1.5px solid #a08d76;
+    transform:rotate(-45deg); transition:transform .15s; margin-right:4px;
+  }
+  details.grp[open] > summary::before{ transform:rotate(45deg); }
+  details.grp > summary:hover .grp-title{ color:var(--accent); }
+  .grp-title{ flex:1; }
+  .info-btn{
+    width:18px; height:18px; padding:0; border-radius:50%;
+    background:transparent; color:#a08d76; border:1px solid var(--line);
+    font-family:Georgia,serif; font-style:italic; font-size:11px; line-height:16px;
+    visibility:hidden;
+  }
+  details.grp[open] .info-btn{ visibility:visible; }
+  details.grp.show-help .info-btn{ background:var(--accent-soft); border-color:var(--accent); color:var(--ink); }
+  .grp-body{ padding:2px 2px 18px; }
+  .hint.more{ display:none; }
+  details.grp.show-help .hint.more{ display:block; }
+  .subhead{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:#8a7862;
+    margin:18px 0 10px; padding-top:14px; border-top:1px dashed var(--line);
+  }
+  label.plain{ margin:0; text-transform:none; letter-spacing:0; font-size:12.5px; color:var(--ink); }
+  .inline-row{ display:flex; align-items:center; gap:10px; }
+  .inline-row label{ margin:0; flex:1; }
+  button.small{ font-size:11.5px; padding:6px 10px; }
+  #sideFooter{
+    border-top:1px solid var(--line); background:var(--panel);
+    padding:12px 20px 14px; flex-shrink:0;
+  }
+  #sideFooter .row{ flex-direction:column; gap:6px; }
+  #sideFooter .row button{ width:100%; }
+  #sideFooter #exportResults{ max-height:120px; overflow-y:auto; margin-top:6px; }
+  #sideFooter #exportResults:empty{ display:none; }
+  #exportStatus:empty{ display:none; }
+  .danger-link{
+    background:none; border:none; color:#b0605a; padding:6px 0 0; font-size:11.5px;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .canvas-bar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; width:100%; }
+  .zoom-bar{ display:flex; align-items:center; gap:4px; margin-left:auto;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:12px; color:#8a7862; }
+  .zoom-bar button{ padding:5px 10px; font-size:12px; }
+  #zoomLabel{ min-width:42px; text-align:center; }
+  .layer-item.dragging{ opacity:.4; }
+  .layer-item.drop-before{ box-shadow: 0 -2px 0 0 var(--accent); }
+  .layer-item.drop-after{ box-shadow: 0 2px 0 0 var(--accent); }
+  .layer-item .layer-grip{ cursor:grab; color:#b8a68f; font-size:13px; padding:0 2px; letter-spacing:-2px; user-select:none; }
+  .layer-item{ touch-action:none; }
+  @media (max-width: 900px){
+    #sidebar{ display:block; padding:0; }
+    #sideScroll{ overflow:visible; padding:18px 16px 16px; }
+    #sideFooter{ position:sticky; bottom:0; padding:10px 16px 14px; }
+    .zoom-bar{ margin-left:0; }
+  }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
-  <div>
-    <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--line);padding:5px 10px;border-radius:20px;margin-bottom:10px;">← Carmi</a>
+ <div id="sideScroll">
+  <div class="side-head">
+    <a href="index.html" class="back-link">← Carmi</a>
     <h1>Kronkellijn Tool</h1>
-    <div class="sub">Zet tekst op een vloeiende golvende lijn over 4 Instagram-slides heen, en laat een icoontje die lijn volgen als animatie.</div>
+    <div class="sub">Tekst op een golvende lijn over je Instagram-slides, met een icoontje dat meebeweegt.</div>
   </div>
 
-  <section>
-    <label>Project</label>
-    <div class="field">
-      <input type="text" id="projectNameInput" placeholder="Naam van dit project…" value="Mijn project">
-    </div>
-    <div class="row">
-      <button id="saveProjectBtn">Opslaan</button>
-      <button class="secondary" id="updateProjectBtn" style="display:none;">Bijwerken</button>
-    </div>
-    <div id="savedProjectsList" class="line-list" style="margin-top:8px;"></div>
-    <div id="projectStatus" class="hint"></div>
-    <div class="row" style="margin-top:6px;">
-      <button class="secondary" id="exportProjectFileBtn" style="font-size:11.5px; padding:6px 10px;">Downloaden als back-upbestand</button>
-      <button class="secondary" id="openProjectFileBtn" style="font-size:11.5px; padding:6px 10px;">Bestand openen…</button>
-    </div>
-    <input type="file" id="projectFileInput" accept=".json" style="display:none;">
-    <div class="hint">Projecten worden bewaard in deze browser op dit apparaat — geen bestand nodig. Open dezelfde webpagina later opnieuw om verder te werken. Heb je al een .json-bestand van eerder? Open het via "Bestand openen…".</div>
-  </section>
-
-  <section>
-    <label>Formaat</label>
-    <div class="preset-row">
-      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1350">Post (4:5)</button>
-      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1080">Vierkant (1:1)</button>
-      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1920">Story / Reel (9:16)</button>
-      <button type="button" class="preset-btn format-btn" data-w="1080" data-h="608">Liggend (16:9)</button>
-    </div>
-    <div class="hint">Werkt ook op een al opgebouwd project — alles (tekst, golf, afbeeldingen) schaalt automatisch mee naar het nieuwe formaat, bijvoorbeeld van post naar story.</div>
-    <div class="field" style="margin-top:12px;">
-      <div class="field-label-row"><label>Aantal slides</label><span class="field-val" id="slideCountVal">4</span></div>
-      <input type="range" id="slideCount" min="1" max="10" step="1" value="4">
-    </div>
-    <div class="hint">Meer of minder Instagram-slides om de golf over te verdelen. Bestaande tekst/afbeeldingen blijven op hun plek staan; je krijgt gewoon meer of minder canvasbreedte.</div>
-  </section>
-
-  <section>
-    <label>Tekst op golvende lijn</label>
-    <div class="field">
-      <textarea id="waveText" placeholder="Typ hier je tekst…"></textarea>
-    </div>
-    <div class="check-row">
-      <input type="checkbox" id="waveRepeat" checked>
-      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveRepeat">Herhaal tekst om de hele breedte te vullen</label>
-    </div>
-    <div class="grid2">
+  <details class="grp" data-grp="project">
+    <summary><span class="grp-title">Project</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
       <div class="field">
-        <div class="field-label-row"><label>Lettertype</label></div>
-        <select id="waveFontFamily">
-          <option value="Georgia, 'Iowan Old Style', serif" selected>Georgia (serif)</option>
-          <option value="'Times New Roman', serif">Times</option>
-          <option value="Arial, sans-serif">Arial</option>
-          <option value="'Helvetica Neue', sans-serif">Helvetica</option>
-          <option value="Impact, sans-serif">Impact</option>
-          <option value="'Courier New', monospace">Courier</option>
-          <option value="'Montserrat', sans-serif">Montserrat</option>
-          <option value="'League Spartan', sans-serif">League Spartan</option>
+        <input type="text" id="projectNameInput" placeholder="Naam van dit project…" value="Mijn project">
+      </div>
+      <div class="row">
+        <button id="saveProjectBtn">Opslaan</button>
+        <button class="secondary" id="updateProjectBtn" style="display:none;">Bijwerken</button>
+      </div>
+      <div id="savedProjectsList" class="line-list" style="margin-top:8px;"></div>
+      <div id="projectStatus" class="hint"></div>
+      <div class="row" style="margin-top:8px;">
+        <button class="secondary small" id="exportProjectFileBtn">Back-up downloaden</button>
+        <button class="secondary small" id="openProjectFileBtn">Bestand openen…</button>
+      </div>
+      <input type="file" id="projectFileInput" accept=".json" style="display:none;">
+      <div class="hint more">Projecten worden bewaard in deze browser op dit apparaat. Een back-up (.json) open je later via "Bestand openen…".</div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="canvas">
+    <summary><span class="grp-title">Canvas</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
+      <div class="field">
+        <div class="field-label-row"><label>Formaat</label></div>
+        <div class="preset-row" style="margin-bottom:0;">
+          <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1350">Post 4:5</button>
+          <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1080">Vierkant 1:1</button>
+          <button type="button" class="preset-btn format-btn" data-w="1080" data-h="1920">Story 9:16</button>
+          <button type="button" class="preset-btn format-btn" data-w="1080" data-h="608">Liggend 16:9</button>
+        </div>
+        <div class="hint more">Alles (tekst, golf, afbeeldingen) schaalt mee als je van formaat wisselt.</div>
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Aantal slides</label><span class="field-val" id="slideCountVal">4</span></div>
+        <input type="range" id="slideCount" min="1" max="10" step="1" value="4">
+        <div class="hint more">Bestaande tekst en afbeeldingen blijven staan; het canvas wordt breder of smaller.</div>
+      </div>
+      <div class="field">
+        <div class="inline-row">
+          <label>Achtergrond</label>
+          <input type="color" id="bgColor" value="#F5D5DE">
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="images">
+    <summary><span class="grp-title">Afbeeldingen</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
+      <div class="row">
+        <button class="secondary" id="addIcon">+ Afbeelding toevoegen</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="icon-list" id="iconList"></div>
+      <div id="selectedIconSizePanel" class="field" style="display:none; margin-top:10px;">
+        <div class="field-label-row"><label>Grootte selectie</label><span class="field-val" id="selectedIconSizeVal">160px</span></div>
+        <input type="range" id="selectedIconSize" min="20" max="600" value="160">
+      </div>
+      <div class="hint more">Klik een afbeelding aan en sleep ze rond. Ze klikt magnetisch vast aan middens, randen en de slidegrenzen. Schaal met het bolletje rechtsonder of met de schuif.</div>
+
+      <div class="subhead">Losse lijnen</div>
+      <div class="row">
+        <button class="secondary" id="addLine">+ Nieuwe lijn</button>
+      </div>
+      <div class="line-list" id="lineList"></div>
+      <div class="field" style="margin-top:10px;">
+        <div class="field-label-row"><label>Lijndikte</label></div>
+        <input type="range" id="strokeWidth" min="3" max="18" value="7">
+      </div>
+      <div class="hint more">Selecteer een lijn en klik op het canvas om punten te zetten. <b>Enter</b> = afronden, <b>Ctrl+Z</b> = ongedaan maken.</div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="text">
+    <summary><span class="grp-title">Tekst</span></summary>
+    <div class="grp-body">
+      <div class="field">
+        <textarea id="waveText" placeholder="Typ hier je tekst…"></textarea>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="waveRepeat" checked>
+        <label class="plain" for="waveRepeat">Herhaal tekst over de hele breedte</label>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <div class="field-label-row"><label>Lettertype</label></div>
+          <select id="waveFontFamily">
+            <option value="Georgia, 'Iowan Old Style', serif" selected>Georgia (serif)</option>
+            <option value="'Times New Roman', serif">Times</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Helvetica Neue', sans-serif">Helvetica</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="'Courier New', monospace">Courier</option>
+            <option value="'Montserrat', sans-serif">Montserrat</option>
+            <option value="'League Spartan', sans-serif">League Spartan</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label-row"><label>Kleur</label></div>
+          <input type="color" id="waveTextColor" value="#ffffff">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Grootte</label><span class="field-val" id="waveFontSizeVal">64px</span></div>
+        <input type="range" id="waveFontSize" min="20" max="160" value="64">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Letterspatiëring</label><span class="field-val" id="waveLetterSpacingVal">2px</span></div>
+        <input type="range" id="waveLetterSpacing" min="-4" max="30" value="2">
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="waveBold" checked>
+        <label class="plain" for="waveBold">Vet</label>
+      </div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="wave">
+    <summary><span class="grp-title">Golflijn</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
+      <div class="preset-row">
+        <button type="button" class="preset-btn" data-amp="30" data-wl="1400">Subtiel</button>
+        <button type="button" class="preset-btn" data-amp="90" data-wl="850">Golvend</button>
+        <button type="button" class="preset-btn" data-amp="150" data-wl="520">Speels</button>
+        <button type="button" class="preset-btn" data-amp="0" data-wl="1000">Recht</button>
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Hoogte golf</label><span class="field-val" id="waveAmplitudeVal">90px</span></div>
+        <input type="range" id="waveAmplitude" min="0" max="260" value="90">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Golflengte</label><span class="field-val" id="waveWavelengthVal">850px</span></div>
+        <input type="range" id="waveWavelength" min="200" max="2400" value="850">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Golf verschuiven</label><span class="field-val" id="wavePhaseVal">0°</span></div>
+        <input type="range" id="wavePhase" min="0" max="360" value="0">
+      </div>
+
+      <div class="subhead">Positie</div>
+      <div class="field">
+        <div class="field-label-row"><label>Verticaal</label><span class="field-val" id="waveBaselineVal">50%</span></div>
+        <input type="range" id="waveBaseline" min="0" max="100" value="45">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Horizontaal</label><span class="field-val" id="waveOffsetXVal">0px</span></div>
+        <input type="range" id="waveOffsetX" min="-4300" max="4300" value="0">
+      </div>
+      <div class="row">
+        <button type="button" class="secondary small" id="resetWavePosBtn">Positie herstellen</button>
+      </div>
+      <div class="hint more">Je kan de tekst ook rechtstreeks op het canvas verslepen (klik op een leeg deel en sleep).</div>
+
+      <div class="subhead">Lijn tonen</div>
+      <div class="check-row">
+        <input type="checkbox" id="waveVisible">
+        <label class="plain" for="waveVisible">Toon de lijn zelf (niet alleen de tekst)</label>
+      </div>
+      <div class="field" id="waveStrokeFields" style="display:none;">
+        <div class="inline-row">
+          <input type="color" id="waveColor" value="#ffffff">
+          <input type="range" id="waveThickness" min="2" max="20" value="6">
+        </div>
+      </div>
+
+      <div class="subhead">Vormen in de lijn</div>
+      <div class="row">
+        <select id="newPathShapeType" style="flex:1;">
+          <option value="heart">Hartje</option>
+          <option value="circle">Cirkel</option>
+          <option value="loop">Lus</option>
+          <option value="star">Ster</option>
+        </select>
+        <button class="secondary" id="addPathShapeBtn">+ Toevoegen</button>
+      </div>
+      <div class="line-list" id="pathShapeList" style="margin-top:8px;"></div>
+      <div id="selectedPathShapePanel" style="display:none; margin-top:10px;">
+        <div class="field">
+          <div class="field-label-row"><label>Positie op de lijn</label><span class="field-val" id="pathShapePosVal">50%</span></div>
+          <input type="range" id="pathShapePos" min="0" max="100" value="50">
+        </div>
+        <div class="field">
+          <div class="field-label-row"><label>Grootte</label><span class="field-val" id="pathShapeSizeVal">180px</span></div>
+          <input type="range" id="pathShapeSize" min="40" max="500" value="180">
+        </div>
+      </div>
+      <div class="hint more">De lijn maakt een uitstapje in de gekozen vorm; tekst, lijn en het animerende icoon volgen mee.</div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="layers">
+    <summary><span class="grp-title">Lagen</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
+      <div class="layer-list" id="layerList"></div>
+      <div class="hint">Sleep een laag omhoog (naar voren) of omlaag (naar achteren).</div>
+      <div class="hint more">Klik een laag om ze te selecteren; op het canvas verschijnt dan een verplaats-handvat, ook als er iets over ligt. Met de pijltjestoetsen schuif je nauwkeurig (Shift = grotere stap).</div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="anim">
+    <summary><span class="grp-title">Animatie</span><button type="button" class="info-btn" title="Uitleg">i</button></summary>
+    <div class="grp-body">
+      <div class="field">
+        <div class="field-label-row"><label>Icoon dat meebeweegt</label></div>
+        <select id="animIconSelect"><option value="">— geen —</option></select>
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Grootte icoon</label><span class="field-val" id="animIconSizeVal">160px</span></div>
+        <input type="range" id="animIconSize" min="30" max="500" value="160">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label>Plaats icoon</label></div>
+        <select id="animPlacement">
+          <option value="on" selected>Op de lijn (over de tekst)</option>
+          <option value="above">Boven de tekst</option>
+          <option value="below">Onder de tekst</option>
         </select>
       </div>
-      <div class="field">
-        <div class="field-label-row"><label>Kleur</label></div>
-        <input type="color" id="waveTextColor" value="#ffffff">
+      <div class="field" id="animGapField" style="display:none;">
+        <div class="field-label-row"><label>Afstand tot tekst</label><span class="field-val" id="animGapVal">10px</span></div>
+        <input type="range" id="animGap" min="-40" max="150" value="10">
       </div>
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Tekstgrootte</label><span class="field-val" id="waveFontSizeVal">64px</span></div>
-      <input type="range" id="waveFontSize" min="20" max="160" value="64">
-    </div>
-    <div class="check-row">
-      <input type="checkbox" id="waveBold" checked>
-      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveBold">Vet</label>
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Letterspatiëring</label><span class="field-val" id="waveLetterSpacingVal">2px</span></div>
-      <input type="range" id="waveLetterSpacing" min="-4" max="30" value="2">
-    </div>
-  </section>
-
-  <section>
-    <label>Vorm tussen herhalingen</label>
-    <div class="field">
-      <div class="field-label-row"><label>Vorm</label></div>
-      <select id="shapeType">
-        <option value="none" selected>Geen</option>
-        <option value="heart">Hartje</option>
-        <option value="circle">Cirkel</option>
-        <option value="star">Ster</option>
-        <option value="cloud">Wolkje</option>
-      </select>
-    </div>
-    <div class="grid2">
-      <div class="field">
-        <div class="field-label-row"><label>Grootte</label><span class="field-val" id="shapeSizeVal">48px</span></div>
-        <input type="range" id="shapeSize" min="10" max="200" value="48">
-      </div>
-      <div class="field">
-        <div class="field-label-row"><label>Kleur</label></div>
-        <input type="color" id="shapeColor" value="#ffffff">
-      </div>
-    </div>
-    <div class="hint">Verschijnt tussen elke herhaling van de tekst langs de lijn (zoals het wolkje-icoontje in het Les Deux-voorbeeld). Alleen zichtbaar als "Herhaal tekst" hierboven aan staat.</div>
-  </section>
-
-  <section>
-    <label>Vormen in de lijn</label>
-    <div class="row">
-      <select id="newPathShapeType" style="flex:1;">
-        <option value="heart">Hartje</option>
-        <option value="circle">Cirkel</option>
-        <option value="loop">Lus</option>
-        <option value="star">Ster</option>
-      </select>
-      <button class="secondary" id="addPathShapeBtn">+ Toevoegen</button>
-    </div>
-    <div class="line-list" id="pathShapeList" style="margin-top:8px;"></div>
-    <div id="selectedPathShapePanel" style="display:none; margin-top:10px;">
-      <div class="field">
-        <div class="field-label-row"><label>Positie op de lijn</label><span class="field-val" id="pathShapePosVal">50%</span></div>
-        <input type="range" id="pathShapePos" min="0" max="100" value="50">
-      </div>
-      <div class="field">
-        <div class="field-label-row"><label>Grootte</label><span class="field-val" id="pathShapeSizeVal">180px</span></div>
-        <input type="range" id="pathShapeSize" min="40" max="500" value="180">
-      </div>
-    </div>
-    <div class="hint">De lijn zelf maakt hier een uitstapje in de gekozen vorm — alles wat al langs de lijn loopt (tekst, de lijnstreek, het animerende icoontje) volgt automatisch mee, zoals in het voorbeeld waar je met je vinger een hartje tekende.</div>
-  </section>
-
-  <section>
-    <label>Golfpatroon</label>
-    <div class="preset-row">
-      <button type="button" class="preset-btn" data-amp="30" data-wl="1400">Subtiel</button>
-      <button type="button" class="preset-btn" data-amp="90" data-wl="850">Golvend</button>
-      <button type="button" class="preset-btn" data-amp="150" data-wl="520">Speels</button>
-      <button type="button" class="preset-btn" data-amp="0" data-wl="1000">Recht</button>
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Amplitude (hoogte golf)</label><span class="field-val" id="waveAmplitudeVal">90px</span></div>
-      <input type="range" id="waveAmplitude" min="0" max="260" value="90">
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Golflengte</label><span class="field-val" id="waveWavelengthVal">850px</span></div>
-      <input type="range" id="waveWavelength" min="200" max="2400" value="850">
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Fase (verschuiven)</label><span class="field-val" id="wavePhaseVal">0°</span></div>
-      <input type="range" id="wavePhase" min="0" max="360" value="0">
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Verticale positie</label><span class="field-val" id="waveBaselineVal">50%</span></div>
-      <input type="range" id="waveBaseline" min="0" max="100" value="45">
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Horizontale positie</label><span class="field-val" id="waveOffsetXVal">0px</span></div>
-      <input type="range" id="waveOffsetX" min="-4300" max="4300" value="0">
-    </div>
-    <div class="row">
-      <button type="button" class="secondary" id="resetWavePosBtn" style="font-size:12px; padding:6px 10px;">Positie herstellen</button>
-    </div>
-    <div class="hint">Sleep de tekst ook rechtstreeks op het canvas naar de gewenste plek (klik op een leeg deel en sleep).</div>
-    <div class="check-row">
-      <input type="checkbox" id="waveVisible">
-      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="waveVisible">Toon de lijn zelf (niet alleen de tekst)</label>
-    </div>
-    <div class="field" id="waveStrokeFields" style="display:none;">
       <div class="grid2">
-        <input type="color" id="waveColor" value="#ffffff">
-        <input type="range" id="waveThickness" min="2" max="20" value="6">
-      </div>
-    </div>
-    <div class="hint">De golf is wiskundig (sinus-gebaseerd) dus altijd perfect vloeiend — geen handmatig geklik meer nodig.</div>
-  </section>
-
-  <section>
-    <label>Lijnen (los, decoratief)</label>
-    <div class="row">
-      <button id="addLine">+ Nieuwe lijn</button>
-    </div>
-    <div class="line-list" id="lineList"></div>
-    <div class="hint">Optioneel: los van de golftekst hierboven kan je hier nog handmatige lijntjes toevoegen. Selecteer een lijn, klik op het canvas om punten toe te voegen. Druk <b>Enter</b> om af te ronden, <b>Ctrl+Z</b> voor ongedaan maken.</div>
-  </section>
-
-  <section>
-    <label>Ingrediënt-afbeeldingen</label>
-    <div class="row">
-      <button class="secondary" id="addIcon">+ Afbeelding toevoegen</button>
-    </div>
-    <input type="file" id="fileInput" accept="image/*">
-    <div class="icon-list" id="iconList"></div>
-    <div id="selectedIconSizePanel" class="field" style="display:none; margin-top:10px;">
-      <div class="field-label-row"><label>Grootte geselecteerde afbeelding</label><span class="field-val" id="selectedIconSizeVal">160px</span></div>
-      <input type="range" id="selectedIconSize" min="20" max="600" value="160">
-    </div>
-    <div class="hint">Klik een afbeelding aan om ze te selecteren — sleep haar rond (met magnetische hulplijnen op middens/randen), sleep de <b>bolletje-handle</b> rechtsonder om te schalen, of gebruik de schuif hierboven.</div>
-  </section>
-
-  <section>
-    <label>Lagen</label>
-    <div class="layer-list" id="layerList"></div>
-    <div class="hint">▲▼ wijzigen alleen de <b>volgorde</b> (wat voor/achter ligt) — niet de positie. Klik een naam om die laag te selecteren; op het canvas verschijnt dan een oranje <b>verplaats-handvat</b> in het midden waarmee je 'm kan slepen, ook als een andere afbeelding erover ligt. Met de pijltjestoetsen verschuif je de selectie nauwkeurig (Shift = grotere stap).</div>
-  </section>
-
-  <section>
-    <label>Animatie</label>
-    <div class="field">
-      <div class="field-label-row"><label>Animerend icoon</label></div>
-      <select id="animIconSelect"><option value="">— geen —</option></select>
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Grootte icoon</label><span class="field-val" id="animIconSizeVal">160px</span></div>
-      <input type="range" id="animIconSize" min="30" max="500" value="160">
-    </div>
-    <div class="grid2">
-      <div class="field">
-        <div class="field-label-row"><label>Duur</label><span class="field-val" id="animDurationVal">5.0s</span></div>
-        <input type="range" id="animDuration" min="1" max="15" step="0.1" value="5">
+        <div class="field">
+          <div class="field-label-row"><label>Duur</label><span class="field-val" id="animDurationVal">5.0s</span></div>
+          <input type="range" id="animDuration" min="1" max="15" step="0.1" value="5">
+        </div>
+        <div class="field">
+          <div class="field-label-row"><label>Pauze eind</label><span class="field-val" id="animHoldVal">1.0s</span></div>
+          <input type="range" id="animHold" min="0" max="5" step="0.1" value="1">
+        </div>
       </div>
       <div class="field">
-        <div class="field-label-row"><label>Vasthouden op eind</label><span class="field-val" id="animHoldVal">1.0s</span></div>
-        <input type="range" id="animHold" min="0" max="5" step="0.1" value="1">
+        <div class="field-label-row"><label>Vertraging bij start</label><span class="field-val" id="animDelayVal">0.0s</span></div>
+        <input type="range" id="animDelay" min="0" max="3" step="0.1" value="0">
       </div>
+      <div class="field">
+        <div class="field-label-row"><label>Beweging</label></div>
+        <select id="animEasing">
+          <option value="linear" selected>Gelijkmatig (best voor naadloze slides)</option>
+          <option value="easeInOut">Rustig starten en stoppen</option>
+        </select>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="animRotate">
+        <label class="plain" for="animRotate">Icoon meedraaien met de lijn</label>
+      </div>
+      <div class="play-row">
+        <button class="secondary" id="playBtn">▶</button>
+        <input type="range" id="scrub" min="0" max="1000" value="0">
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="secondary" id="previewCarouselBtn">Voorbeeld per slide ▸</button>
+      </div>
+      <div class="hint more">Kies welke afbeelding over de lijn beweegt. "Voorbeeld per slide" speelt elke slide af zoals in de Instagram-carrousel.</div>
     </div>
-    <div class="field">
-      <div class="field-label-row"><label>Vertraging bij start</label><span class="field-val" id="animDelayVal">0.0s</span></div>
-      <input type="range" id="animDelay" min="0" max="3" step="0.1" value="0">
-    </div>
-    <div class="field">
-      <div class="field-label-row"><label>Beweging</label></div>
-      <select id="animEasing">
-        <option value="linear" selected>Lineair (gelijkmatig — beste voor naadloze slides)</option>
-        <option value="easeInOut">Ease in/out (rustig starten en stoppen)</option>
-      </select>
-    </div>
-    <div class="check-row">
-      <input type="checkbox" id="animRotate">
-      <label style="margin:0; text-transform:none; letter-spacing:0; font-size:12.5px;" for="animRotate">Icoon meeroteren met de lijn</label>
-    </div>
-    <div class="play-row">
-      <button class="secondary" id="playBtn">▶</button>
-      <input type="range" id="scrub" min="0" max="1000" value="0">
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button class="accent" id="previewCarouselBtn">Voorbeeld per slide ▸</button>
-    </div>
-    <div class="hint">Speelt elke slide af zoals hij er in de Instagram-carrousel uit zou zien, inclusief het naadloze vertrekpunt van de animatie.</div>
-    <div class="hint">Kies hierboven welke afbeelding meebeweegt over de golvende lijn. Speel af om de beweging te bekijken voor je exporteert.</div>
-  </section>
+  </details>
+ </div>
 
-  <section>
-    <label>Achtergrond</label>
-    <div class="row" style="align-items:center;">
-      <input type="color" id="bgColor" value="#F5D5DE">
-      <span class="sub" style="margin:0;">Slide-achtergrondkleur</span>
-    </div>
-  </section>
-
-  <section>
-    <label>Lijndikte (losse lijnen)</label>
-    <input type="range" id="strokeWidth" min="3" max="18" value="7">
-  </section>
-
-  <section>
-    <label>Zoom</label>
-    <div class="row" style="align-items:center;">
-      <button class="secondary" id="zoomOut">−</button>
-      <span class="sub" id="zoomLabel" style="margin:0; min-width:44px; text-align:center;">100%</span>
-      <button class="secondary" id="zoomIn">+</button>
-      <button class="secondary" id="zoomReset">Passend</button>
-    </div>
-    <div class="hint">Of scroll met Ctrl (Cmd op Mac) ingedrukt over het canvas.</div>
-  </section>
-
-  <section>
-    <label>Exporteren</label>
-    <div class="row">
-      <button class="accent" id="exportBtn">Exporteer 4 slides (PNG)</button>
-    </div>
-    <div class="hint">Downloadt 4 losse PNG's (1080×1350), precies zoals nu op het canvas te zien is.</div>
-    <div class="row" style="margin-top:10px;">
-      <button class="accent" id="exportVideoBtn">Exporteer 4 slides (video)</button>
-    </div>
-    <div class="hint">Elke slide-video start precies op het moment dat het icoon links in beeld komt — bij het doorswipen op Instagram lijkt de animatie zo naadloos door te lopen. Exporteert rechtstreeks als MP4 (H.264), zonder haperingen: elke frame krijgt een vaste, berekende plek in de tijd in plaats van live te worden opgenomen.</div>
-    <div id="exportStatus"></div>
-    <div id="exportResults" class="line-list" style="margin-top:8px;"></div>
-    <div class="row" style="margin-top:10px;">
-      <button class="secondary" id="clearBtn">Alles wissen</button>
-    </div>
-  </section>
+ <div id="sideFooter">
+   <label>Exporteren</label>
+   <div class="row">
+     <button class="accent" id="exportBtn">Exporteer slides (PNG)</button>
+     <button class="accent" id="exportVideoBtn">Exporteer slides (video)</button>
+   </div>
+   <div id="exportStatus"></div>
+   <div id="exportResults" class="line-list"></div>
+   <button type="button" class="danger-link" id="clearBtn">Alles wissen</button>
+ </div>
 </div>
 
 <div id="main">
-  <div class="mode-banner" id="modeBanner">Selecteer of maak een lijn, klik dan op het canvas om punten te plaatsen.</div>
+  <div class="canvas-bar">
+    <div class="mode-banner" id="modeBanner">Selecteer of maak een lijn, klik dan op het canvas om punten te plaatsen.</div>
+    <div class="zoom-bar" title="Of scroll met Ctrl/Cmd ingedrukt over het canvas">
+      <button class="secondary" id="zoomOut">−</button>
+      <span id="zoomLabel">100%</span>
+      <button class="secondary" id="zoomIn">+</button>
+      <button class="secondary" id="zoomReset">Passend</button>
+    </div>
+  </div>
   <div id="canvasWrap">
     <canvas id="baseCanvas"></canvas>
     <canvas id="overlay"></canvas>
@@ -2614,6 +2675,9 @@ let draggingIcon = null;    // {id, offX, offY}
 let resizingIcon = null;    // {id, startW, startH, startPosX, aspect}
 let selectedPoint = null;   // {lineId, index}
 let selectedIconId = null;
+let selectedText = false;     // the wave text is selected on the canvas
+let selectedTextS = null;     // arc length where it was grabbed (anchor for the size handle)
+let resizingText = null;      // {anchorX, anchorY, startDist, startSize}
 let activeSnapGuides = null; // {x: canvasXOrNull, y: canvasYOrNull} while dragging an icon
 const SNAP_THRESHOLD_SCREEN_PX = 8;
 let pickingColorForLineId = null; // fallback eyedropper mode
@@ -2654,6 +2718,8 @@ let animDelay = 0.0;
 let animHold = 1.0;
 let animEasing = 'linear';
 let animRotate = false;
+let animPlacement = 'on'; // 'on' | 'above' | 'below'
+let animGap = 10;
 let previewT = 0;
 let previewPlaying = false;
 let previewStartPerf = null;
@@ -2817,7 +2883,7 @@ function updateModeBanner(){
     banner.innerHTML = `Actief: <b>Lijn ${idx}</b> — klik op het canvas om een punt toe te voegen. Druk op <b>Enter</b> als je klaar bent.`;
     overlay.style.cursor = 'crosshair';
   } else {
-    banner.textContent = 'Sleep op het canvas om de tekst te verplaatsen. Losse handmatige lijnen (optioneel) maak je met "+ Nieuwe lijn".';
+    banner.textContent = 'Klik op de tekst of een afbeelding om ze te selecteren en te verslepen. Het roze bolletje vergroot of verkleint.';
     overlay.style.cursor = 'grab';
   }
 }
@@ -3029,15 +3095,6 @@ document.getElementById('waveVisible').addEventListener('change', (e)=>{
   draw();
 });
 
-document.getElementById('shapeType').addEventListener('change', (e)=>{
-  shapeType = e.target.value;
-  draw();
-});
-document.getElementById('shapeColor').addEventListener('input', (e)=>{
-  shapeColor = e.target.value;
-  draw();
-});
-bindRange('shapeSize','shapeSizeVal', v=>Math.round(v)+'px', v=> shapeSize=v);
 
 // ---------- Shapes spliced into the line's own geometry ----------
 function renderPathShapeList(){
@@ -3198,6 +3255,14 @@ bindRange('animDelay','animDelayVal', v=>v.toFixed(1)+'s', v=> animDelay=v);
 bindRange('animHold','animHoldVal', v=>v.toFixed(1)+'s', v=> animHold=v);
 document.getElementById('animEasing').addEventListener('change', (e)=>{ animEasing = e.target.value; draw(); });
 document.getElementById('animRotate').addEventListener('change', (e)=>{ animRotate = e.target.checked; draw(); });
+function syncAnimPlacementUI(){
+  document.getElementById('animPlacement').value = animPlacement;
+  document.getElementById('animGap').value = animGap;
+  document.getElementById('animGapVal').textContent = Math.round(animGap)+'px';
+  document.getElementById('animGapField').style.display = animPlacement==='on' ? 'none' : '';
+}
+document.getElementById('animPlacement').addEventListener('change', (e)=>{ animPlacement = e.target.value; syncAnimPlacementUI(); draw(); });
+bindRange('animGap','animGapVal', v=>Math.round(v)+'px', v=> animGap=v);
 
 document.getElementById('scrub').addEventListener('input', (e)=>{
   previewPlaying = false;
@@ -3523,6 +3588,18 @@ function getAnimIcon(){
   return icons.find(i=>String(i.id)===String(animIconId)) || null;
 }
 
+// Where the animated icon's centre sits for a point on the path:
+// on the line itself, or shifted perpendicular to it so it rides
+// just above/below the text and keeps the text readable.
+function animIconPlacement(path, s, icon){
+  const pos = posAtArcLength(path, s);
+  if(animPlacement === 'on') return pos;
+  const half = animRotate ? icon.h/2 : (Math.abs(Math.cos(pos.angle))*icon.h + Math.abs(Math.sin(pos.angle))*icon.w)/2;
+  const d = waveFontSize*0.5 + half + animGap;
+  const dir = animPlacement === 'above' ? -1 : 1;
+  // normal pointing "down" relative to direction of travel is (-sin, cos)
+  return {x: pos.x - Math.sin(pos.angle)*d*dir, y: pos.y + Math.cos(pos.angle)*d*dir, angle: pos.angle};
+}
 function easedProgressAt(animT){
   const dur = Math.max(0.01, animDuration);
   let u = (animT - animDelay) / dur;
@@ -3554,7 +3631,7 @@ function renderLayerContent(ctx, layer, path, animT, offsetX){
     if(String(icon.id)===String(animIconId)){
       const u = easedProgressAt(animT);
       const s = u * path.totalLength;
-      const pos = posAtArcLength(path, s);
+      const pos = animIconPlacement(path, s, icon);
       ctx.save();
       ctx.translate(pos.x, pos.y);
       if(animRotate) ctx.rotate(pos.angle);
@@ -3607,6 +3684,12 @@ function layerLabel(layer){
 }
 
 function addLayerFor(type, id){
+  // New images go just below the wave text/line, so they never hide
+  // the text by default (reorder in Lagen if you want one on top).
+  if(type==='icon'){
+    const idx = layers.findIndex(l=> l.type==='waveline' || l.type==='wavetext');
+    if(idx >= 0){ layers.splice(idx, 0, {type, id, visible:true}); return; }
+  }
   layers.push({type, id, visible:true});
 }
 function removeLayerFor(type, id){
@@ -3632,20 +3715,28 @@ function renderLayerList(){
     const row = document.createElement('div');
     row.className = 'layer-item';
     const isSelected =
+      (layer.type==='wavetext' && selectedText) ||
       (layer.type==='icon' && String(layer.id)===String(selectedIconId)) ||
       (layer.type==='line' && String(layer.id)===String(activeLineId));
     if(isSelected) row.classList.add('selected');
+    row.dataset.idx = arrIdx;
     row.innerHTML = `
+      <span class="layer-grip" title="Sleep om de volgorde te wijzigen">⋮⋮</span>
       <button class="layer-vis" data-idx="${arrIdx}" title="Tonen/verbergen">${layer.visible ? '👁' : '🚫'}</button>
       <span class="layer-label">${layerLabel(layer)}</span>
-      <button class="layer-move" data-idx="${arrIdx}" data-dir="1" title="Naar voren">▲</button>
-      <button class="layer-move" data-idx="${arrIdx}" data-dir="-1" title="Naar achteren">▼</button>
     `;
+    row.addEventListener('pointerdown', (e)=> startLayerDrag(e, row, arrIdx));
     row.addEventListener('click', (e)=>{
-      if(e.target.closest('button')) return; // vis/move buttons handle themselves
+      if(e.target.closest('button')) return; // vis button handles itself
+      if(layerDragJustEnded){ layerDragJustEnded = false; return; }
       if(layer.type==='icon'){
+        selectedText = false;
         selectedIconId = layer.id;
         syncSelectedIconSizeUI();
+      } else if(layer.type==='wavetext' || layer.type==='waveline'){
+        const path = buildWavePath();
+        // anchor the handle in the first visible slide part of the text
+        selectText(Math.min(path.totalLength*0.15, SLIDE_W*0.5));
       } else if(layer.type==='line'){
         activeLineId = layer.id;
         const line = lines.find(l=>l.id===layer.id);
@@ -3661,20 +3752,74 @@ function renderLayerList(){
   el.querySelectorAll('.layer-vis').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
+      if(layerDragJustEnded){ layerDragJustEnded = false; return; }
       const idx = parseInt(btn.dataset.idx);
       layers[idx].visible = !layers[idx].visible;
       renderLayerList();
       draw();
     });
   });
-  el.querySelectorAll('.layer-move').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.idx);
-      const dir = parseInt(btn.dataset.dir);
-      moveLayer(idx, dir);
-    });
-  });
+}
+
+// ---------- Drag & drop reordering in the layer list ----------
+// Works with mouse and touch (pointer events). Top of the list = front.
+let layerDrag = null;
+let layerDragJustEnded = false;
+function startLayerDrag(e, row, arrIdx){
+  if(e.button !== undefined && e.button !== 0) return;
+  layerDrag = {fromIdx: arrIdx, row, startY: e.clientY, active:false, target:null};
+  window.addEventListener('pointermove', onLayerDragMove);
+  window.addEventListener('pointerup', onLayerDragEnd, {once:true});
+  window.addEventListener('pointercancel', onLayerDragEnd, {once:true});
+}
+function clearLayerDropMarks(){
+  document.querySelectorAll('#layerList .layer-item').forEach(r=>r.classList.remove('drop-before','drop-after'));
+}
+function onLayerDragMove(e){
+  if(!layerDrag) return;
+  if(!layerDrag.active){
+    if(Math.abs(e.clientY - layerDrag.startY) < 4) return;
+    layerDrag.active = true;
+    layerDrag.row.classList.add('dragging');
+    document.body.style.cursor = 'grabbing';
+  }
+  e.preventDefault();
+  clearLayerDropMarks();
+  const rows = [...document.querySelectorAll('#layerList .layer-item')];
+  let target = null;
+  for(const r of rows){
+    const rect = r.getBoundingClientRect();
+    if(e.clientY < rect.top + rect.height/2){ target = {row:r, before:true}; break; }
+  }
+  if(!target && rows.length) target = {row: rows[rows.length-1], before:false};
+  if(target){
+    target.row.classList.add(target.before ? 'drop-before' : 'drop-after');
+    layerDrag.target = {idx: parseInt(target.row.dataset.idx), before: target.before};
+  }
+}
+function onLayerDragEnd(){
+  window.removeEventListener('pointermove', onLayerDragMove);
+  const d = layerDrag; layerDrag = null;
+  document.body.style.cursor = '';
+  if(!d) return;
+  d.row.classList.remove('dragging');
+  clearLayerDropMarks();
+  if(!d.active || !d.target) return;
+  layerDragJustEnded = true;
+  setTimeout(()=>{ layerDragJustEnded = false; }, 0);
+  // Work in display order (front first), then convert back.
+  const display = layers.slice().reverse();
+  const n = layers.length;
+  const from = n-1-d.fromIdx;
+  let to = (n-1-d.target.idx) + (d.target.before ? 0 : 1);
+  if(from === to || from+1 === to) return;
+  const [item] = display.splice(from, 1);
+  if(from < to) to--;
+  display.splice(to, 0, item);
+  if(typeof pushHistory === 'function') pushHistory();
+  layers = display.reverse();
+  renderLayerList();
+  draw();
 }
 
 // ---------- Draw ----------
@@ -3775,6 +3920,39 @@ function draw(){
     }
   });
 
+  if(selectedText && waveText){
+    const path = buildWavePath();
+    const ext = Math.min(path.totalLength, textExtentS());
+    octx.save();
+    octx.lineCap = 'round'; octx.lineJoin = 'round';
+    octx.strokeStyle = 'rgba(189,148,158,0.22)';
+    octx.lineWidth = waveFontSize*1.2;
+    octx.beginPath();
+    for(let i=0;i<path.xs.length && path.ss[i] <= ext;i++){
+      if(i===0) octx.moveTo(path.xs[i], path.ys[i]); else octx.lineTo(path.xs[i], path.ys[i]);
+    }
+    octx.stroke();
+    octx.restore();
+    const h = textHandlePos();
+    if(h){
+      const r = screenPx(14);
+      octx.save();
+      octx.strokeStyle = 'rgba(255,255,255,0.9)'; octx.lineWidth = screenPx(2);
+      octx.setLineDash([screenPx(4), screenPx(4)]);
+      octx.beginPath(); octx.moveTo(h.ax, h.ay); octx.lineTo(h.x, h.y); octx.stroke();
+      octx.setLineDash([]);
+      octx.beginPath(); octx.arc(h.x, h.y, r, 0, Math.PI*2);
+      octx.fillStyle = '#bd949e'; octx.fill();
+      octx.lineWidth = screenPx(3); octx.strokeStyle = '#fff'; octx.stroke();
+      // little "A" so it reads as text size
+      octx.fillStyle = '#fff';
+      octx.font = `700 ${Math.round(r*1.1)}px -apple-system, sans-serif`;
+      octx.textAlign = 'center'; octx.textBaseline = 'middle';
+      octx.fillText('A', h.x, h.y+1);
+      octx.restore();
+    }
+  }
+
   if(activeSnapGuides){
     octx.save();
     octx.strokeStyle = '#bd949e';
@@ -3824,6 +4002,83 @@ function toCanvasCoords(evt){
     x: (evt.clientX - rect.left) * scaleX,
     y: (evt.clientY - rect.top) * scaleY
   };
+}
+
+// ---------- Layer-aware hit testing ----------
+// Picks the top-most visible layer under the pointer, in the same order
+// as the Layers panel, so text on top of a photo grabs the text.
+function screenPx(px){ return px / Math.max(0.001, baseScale*zoomFactor); }
+function nearestOnPath(path, pos){
+  let best = {d:Infinity, s:0};
+  for(let i=0;i<path.xs.length;i++){
+    const d = Math.hypot(path.xs[i]-pos.x, path.ys[i]-pos.y);
+    if(d < best.d) best = {d, s: path.ss[i]};
+  }
+  return best;
+}
+function textExtentS(){
+  if(!waveText) return 0;
+  if(waveRepeat) return Infinity;
+  bctx.save(); bctx.font = buildFontCss();
+  let w = 0;
+  for(const ch of waveText) w += bctx.measureText(ch).width + waveLetterSpacing;
+  bctx.restore();
+  return w;
+}
+function hitTestLayerAt(pos){
+  const path = buildWavePath();
+  for(let i=layers.length-1;i>=0;i--){
+    const layer = layers[i];
+    if(!layer.visible) continue;
+    if(layer.type==='icon'){
+      const icon = icons.find(x=>x.id===layer.id);
+      if(!icon) continue;
+      if(String(icon.id)===String(animIconId)){
+        if(lastAnimPos){
+          const pad = screenPx(8);
+          const bx = lastAnimPos.x - lastAnimPos.w/2, by = lastAnimPos.y - lastAnimPos.h/2;
+          if(pos.x>=bx-pad && pos.x<=bx+lastAnimPos.w+pad && pos.y>=by-pad && pos.y<=by+lastAnimPos.h+pad) return {type:'anim', id:icon.id};
+        }
+        continue;
+      }
+      if(pos.x>=icon.x && pos.x<=icon.x+icon.w && pos.y>=icon.y && pos.y<=icon.y+icon.h) return {type:'icon', id:icon.id};
+    } else if(layer.type==='wavetext'){
+      if(!waveText) continue;
+      const n = nearestOnPath(path, pos);
+      if(n.d < waveFontSize*0.6 + screenPx(6) && n.s <= textExtentS() + 20) return {type:'text', s:n.s};
+    } else if(layer.type==='waveline'){
+      if(!waveVisible) continue;
+      const n = nearestOnPath(path, pos);
+      if(n.d < waveThickness/2 + screenPx(10)) return {type:'text', s:n.s};
+    }
+  }
+  return null;
+}
+function textHandlePos(){
+  if(!selectedText) return null;
+  const path = buildWavePath();
+  const s = Math.max(0, Math.min(path.totalLength, selectedTextS ?? 0));
+  const p = posAtArcLength(path, s);
+  const d = waveFontSize*0.6 + screenPx(22);
+  return {x: p.x + Math.sin(p.angle)*d, y: p.y - Math.cos(p.angle)*d, ax:p.x, ay:p.y, angle:p.angle};
+}
+function hitTestTextHandle(pos){
+  const h = textHandlePos();
+  if(!h) return false;
+  return Math.hypot(pos.x-h.x, pos.y-h.y) < screenPx(20);
+}
+function selectText(s){
+  selectedText = true;
+  selectedTextS = s;
+  selectedIconId = null;
+  syncSelectedIconSizeUI();
+}
+function setWaveFontSize(v){
+  waveFontSize = Math.round(Math.max(20, Math.min(400, v)));
+  const el = document.getElementById('waveFontSize');
+  if(waveFontSize > parseInt(el.max)) el.max = waveFontSize;
+  el.value = waveFontSize;
+  document.getElementById('waveFontSizeVal').textContent = waveFontSize+'px';
 }
 
 function hitTestPoint(pos){
@@ -3884,21 +4139,17 @@ function hitTestMoveHandle(pos){
   const threshold = 24 / Math.max(0.001, baseScale*zoomFactor);
   return Math.hypot(pos.x-cx, pos.y-cy) < threshold;
 }
-// ---------- Magnetic snap guides for dragging icons ----------
-function applyIconSnap(icon, x, y){
-  const scale = baseScale * zoomFactor;
-  const threshold = SNAP_THRESHOLD_SCREEN_PX / Math.max(0.001, scale);
-
-  const w = icon.w, h = icon.h;
-  const slideIdx = Math.max(0, Math.min(N_SLIDES-1, Math.floor((x + w/2) / SLIDE_W)));
-  const slideLeft = slideIdx*SLIDE_W, slideRight = slideLeft+SLIDE_W;
-
-  const xTargets = [
-    {v: slideLeft + SLIDE_W/2, kind:'center'},
-    {v: slideLeft, kind:'edge'},
-    {v: slideRight, kind:'edge'}
-  ];
+// Snap targets: every slide divider (the dashed lines), every slide's
+// centre, canvas top/bottom/centre, the wave baseline and other images.
+function getSnapTargets(icon){
+  const xTargets = [];
+  for(let i=0;i<=N_SLIDES;i++){
+    xTargets.push({v: i*SLIDE_W, kind:'edge'});
+    if(i<N_SLIDES) xTargets.push({v: i*SLIDE_W + SLIDE_W/2, kind:'center'});
+  }
   const yTargets = [
+    {v: 0, kind:'edge'},
+    {v: FULL_H, kind:'edge'},
     {v: FULL_H/2, kind:'center'},
     {v: (waveBaselinePct/100)*FULL_H, kind:'edge'}
   ];
@@ -3907,6 +4158,34 @@ function applyIconSnap(icon, x, y){
     xTargets.push({v:other.x, kind:'edge'}, {v:other.x+other.w, kind:'edge'}, {v:other.x+other.w/2, kind:'center'});
     yTargets.push({v:other.y, kind:'edge'}, {v:other.y+other.h, kind:'edge'}, {v:other.y+other.h/2, kind:'center'});
   });
+  return {xTargets, yTargets};
+}
+// While resizing (top-left fixed), snap the right or bottom edge.
+function applyResizeSnap(icon, newW, aspect){
+  const scale = baseScale * zoomFactor;
+  const threshold = SNAP_THRESHOLD_SCREEN_PX / Math.max(0.001, scale);
+  const {xTargets, yTargets} = getSnapTargets(icon);
+  const right = icon.x + newW, bottom = icon.y + newW/aspect;
+  let best = null, bestD = threshold;
+  xTargets.forEach(t=>{
+    const d = Math.abs(right - t.v);
+    if(d < bestD && t.v > icon.x + 20){ bestD = d; best = {axis:'x', v:t.v}; }
+  });
+  yTargets.forEach(t=>{
+    const d = Math.abs(bottom - t.v);
+    if(d < bestD && t.v > icon.y + 20){ bestD = d; best = {axis:'y', v:t.v}; }
+  });
+  if(!best) return {w:newW, guides:null};
+  if(best.axis==='x') return {w: best.v - icon.x, guides:{x:best.v, y:null}};
+  return {w: (best.v - icon.y)*aspect, guides:{x:null, y:best.v}};
+}
+// ---------- Magnetic snap guides for dragging icons ----------
+function applyIconSnap(icon, x, y){
+  const scale = baseScale * zoomFactor;
+  const threshold = SNAP_THRESHOLD_SCREEN_PX / Math.max(0.001, scale);
+
+  const w = icon.w, h = icon.h;
+  const {xTargets, yTargets} = getSnapTargets(icon);
 
   const candidatesX = [
     {feature:'left', val:x}, {feature:'center', val:x+w/2}, {feature:'right', val:x+w}
@@ -3989,6 +4268,13 @@ overlay.addEventListener('pointerdown', (e)=>{
     return;
   }
 
+  if(hitTestTextHandle(pos)){
+    const h = textHandlePos();
+    pushHistory();
+    resizingText = {anchorX:h.ax, anchorY:h.ay, startDist: Math.max(1, Math.hypot(pos.x-h.ax, pos.y-h.ay)), startSize: waveFontSize};
+    return;
+  }
+
   if(hitTestMoveHandle(pos)){
     const icon = icons.find(i=>i.id===selectedIconId);
     pushHistory();
@@ -3996,25 +4282,28 @@ overlay.addEventListener('pointerdown', (e)=>{
     return;
   }
 
-  const iconHit = hitTestIcon(pos);
-  if(iconHit){
+  const hit = hitTestLayerAt(pos);
+  if(hit && hit.type==='icon'){
     pushHistory();
-    selectedIconId = iconHit;
+    selectedText = false;
+    selectedIconId = hit.id;
     syncSelectedIconSizeUI();
     renderLayerList();
-    const icon = icons.find(i=>i.id===iconHit);
-    draggingIcon = {id: iconHit, offX: pos.x-icon.x, offY: pos.y-icon.y};
+    const icon = icons.find(i=>i.id===hit.id);
+    draggingIcon = {id: hit.id, offX: pos.x-icon.x, offY: pos.y-icon.y};
     draw();
     return;
   }
 
-  if(hitTestAnimIcon(pos)){
-    selectedIconId = animIconId;
-    syncSelectedIconSizeUI();
+  if(hit && (hit.type==='anim' || hit.type==='text')){
+    pushHistory();
+    if(hit.type==='anim'){ selectedText = false; selectedIconId = animIconId; syncSelectedIconSizeUI(); }
+    else selectText(hit.s);
     renderLayerList();
     draggingWave = {
       startPosX: pos.x, startPosY: pos.y,
-      startOffset: waveOffsetX, startBaselinePct: waveBaselinePct
+      startOffset: waveOffsetX, startBaselinePct: waveBaselinePct,
+      startTextS: selectedTextS
     };
     overlay.style.cursor = 'grabbing';
     draw();
@@ -4023,7 +4312,9 @@ overlay.addEventListener('pointerdown', (e)=>{
 
   // clicked empty space
   selectedIconId = null;
+  selectedText = false;
   syncSelectedIconSizeUI();
+  renderLayerList();
   if(activeLineId){
     const line = lines.find(l=>l.id===activeLineId);
     if(line && !line.finished){
@@ -4046,8 +4337,14 @@ overlay.addEventListener('pointerdown', (e)=>{
 });
 
 window.addEventListener('pointermove', (e)=>{
-  if(!draggingPoint && !draggingIcon && !resizingIcon && !draggingWave) return;
+  if(!draggingPoint && !draggingIcon && !resizingIcon && !draggingWave && !resizingText) return;
   const pos = toCanvasCoords(e);
+  if(resizingText){
+    const d = Math.hypot(pos.x-resizingText.anchorX, pos.y-resizingText.anchorY);
+    setWaveFontSize(resizingText.startSize + (d - resizingText.startDist)*0.6);
+    draw();
+    return;
+  }
   if(draggingWave){
     const dx = pos.x - draggingWave.startPosX;
     const dy = pos.y - draggingWave.startPosY;
@@ -4074,6 +4371,9 @@ window.addEventListener('pointermove', (e)=>{
     const icon = icons.find(i=>i.id===resizingIcon.id);
     const delta = pos.x - resizingIcon.startPosX;
     let newW = Math.max(30, resizingIcon.startW + delta);
+    const rs = applyResizeSnap(icon, newW, resizingIcon.aspect);
+    newW = Math.max(30, rs.w);
+    activeSnapGuides = rs.guides;
     let newH = newW / resizingIcon.aspect;
     icon.w = newW;
     icon.h = newH;
@@ -4082,10 +4382,21 @@ window.addEventListener('pointermove', (e)=>{
     draw();
   }
 });
+// Hover feedback: show what you'd grab.
+overlay.addEventListener('pointermove', (e)=>{
+  if(draggingPoint || draggingIcon || resizingIcon || draggingWave || resizingText || layerDrag) return;
+  if(pickingColorForLineId) return;
+  const pos = toCanvasCoords(e);
+  let c = activeLineId ? 'crosshair' : 'default';
+  if(hitTestIconHandle(pos) || hitTestTextHandle(pos)) c = 'nwse-resize';
+  else if(hitTestMoveHandle(pos) || hitTestLayerAt(pos)) c = 'move';
+  overlay.style.cursor = c;
+});
 window.addEventListener('pointerup', ()=>{
   draggingPoint = null;
   draggingIcon = null;
   resizingIcon = null;
+  resizingText = null;
   activeSnapGuides = null;
   if(draggingWave){ draggingWave = null; overlay.style.cursor = activeLineId ? 'crosshair' : 'grab'; }
 });
@@ -4109,6 +4420,12 @@ window.addEventListener('keydown', (e)=>{
     pickingColorForLineId = null;
     renderLineList();
     updateModeBanner();
+    return;
+  }
+
+  if(e.key==='Escape' && !inField && (selectedText || selectedIconId)){
+    selectedText = false; selectedIconId = null;
+    syncSelectedIconSizeUI(); renderLayerList(); draw();
     return;
   }
 
@@ -4393,7 +4710,7 @@ function renderCachedFrame(ctx, caches, animT, offsetX, w, h, path){
   if(icon && caches.iconLayerIdx>=0){
     const u = easedProgressAt(animT);
     const s = u * path.totalLength;
-    const pos = posAtArcLength(path, s);
+    const pos = animIconPlacement(path, s, icon);
     ctx.save();
     ctx.translate(pos.x - offsetX, pos.y);
     if(animRotate) ctx.rotate(pos.angle);
@@ -4682,7 +4999,7 @@ function serializeProject(){
     shapeCounter,
     pathShapes: pathShapes.map(s=>({id:s.id, type:s.type, insertX:s.insertX, size:s.size})),
     bgColor, strokeWidth,
-    animIconId, animDuration, animDelay, animHold, animEasing, animRotate,
+    animIconId, animDuration, animDelay, animHold, animEasing, animRotate, animPlacement, animGap,
     lineCounter, iconCounter,
     lines: lines.map(l=>({id:l.id, color:l.color, finished:l.finished,
       points: l.points.map(p=>({x:p.x, y:p.y}))})),
@@ -4714,10 +5031,6 @@ function applyAllUIFromState(){
   document.getElementById('waveVisible').checked = waveVisible;
   document.getElementById('waveStrokeFields').style.display = waveVisible ? '' : 'none';
   document.getElementById('waveColor').value = waveColor;
-  document.getElementById('shapeType').value = shapeType;
-  document.getElementById('shapeColor').value = shapeColor;
-  document.getElementById('shapeSize').value = shapeSize;
-  document.getElementById('shapeSizeVal').textContent = Math.round(shapeSize)+'px';
   document.getElementById('waveThickness').value = waveThickness;
   document.getElementById('bgColor').value = bgColor;
   document.getElementById('strokeWidth').value = strokeWidth;
@@ -4729,6 +5042,7 @@ function applyAllUIFromState(){
   document.getElementById('animHoldVal').textContent = animHold.toFixed(1)+'s';
   document.getElementById('animEasing').value = animEasing;
   document.getElementById('animRotate').checked = animRotate;
+  syncAnimPlacementUI();
 }
 
 function loadIconImage(src){
@@ -4774,7 +5088,7 @@ async function applyProjectData(data){
   waveOffsetX = data.waveOffsetX ?? waveOffsetX;
   waveVisible = data.waveVisible ?? waveVisible;
   waveColor = data.waveColor ?? waveColor;
-  shapeType = data.shapeType ?? shapeType;
+  shapeType = 'none';
   shapeSize = data.shapeSize ?? shapeSize;
   shapeColor = data.shapeColor ?? shapeColor;
   shapeCounter = data.shapeCounter ?? shapeCounter;
@@ -4789,6 +5103,8 @@ async function applyProjectData(data){
   animHold = data.animHold ?? animHold;
   animEasing = data.animEasing ?? animEasing;
   animRotate = data.animRotate ?? animRotate;
+  animPlacement = data.animPlacement ?? 'on';
+  animGap = data.animGap ?? 10;
   lineCounter = data.lineCounter ?? lineCounter;
   iconCounter = data.iconCounter ?? iconCounter;
 
@@ -5023,6 +5339,27 @@ document.getElementById('projectFileInput').addEventListener('change', async (e)
 });
 
 renderSavedProjectsList();
+
+// ---------- Sidebar groups: remember open/closed, help toggles ----------
+(function(){
+  const KEY = 'kronkellijn.openGroups';
+  const DEFAULT_OPEN = ['images','text'];
+  let open;
+  try{ open = JSON.parse(localStorage.getItem(KEY)); }catch(e){ open = null; }
+  if(!Array.isArray(open)) open = DEFAULT_OPEN;
+  document.querySelectorAll('details.grp').forEach(d=>{
+    d.open = open.includes(d.dataset.grp);
+    d.addEventListener('toggle', ()=>{
+      const now = [...document.querySelectorAll('details.grp')].filter(x=>x.open).map(x=>x.dataset.grp);
+      try{ localStorage.setItem(KEY, JSON.stringify(now)); }catch(e){}
+    });
+    const info = d.querySelector('.info-btn');
+    if(info) info.addEventListener('click', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      d.classList.toggle('show-help');
+    });
+  });
+})();
 </script>
 </body>
 </html>
