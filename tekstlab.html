@@ -265,6 +265,15 @@ const P=[];const def=o=>P.push(o);
 function lx(S,w,bw,cx=S.cx){return S.align==='left'?cx-bw/2:S.align==='right'?cx+bw/2-w:cx-w/2}
 const maxOf=a=>Math.max(1,...a);
 
+/* blokje: strak of met gescheurde papierrand */
+function box(torn,c,x,y,w,h,sz,seed){if(!torn){c.fillRect(x,y,w,h);return}
+  const st=Math.max(2,sz*.075),a=sz*.07,n=(k,s)=>(hash(seed*97.13+k*1.37+s*13.1)-.5)*a;
+  c.beginPath();c.moveTo(x,y+n(0,1));let k=0;for(let px=st;px<w;px+=st){k++;c.lineTo(x+px,y+n(k,1))}c.lineTo(x+w,y+n(999,1));
+  for(let py=st;py<h;py+=st)c.lineTo(x+w+n(Math.round(py/st),5)*1.3,y+py);
+  c.lineTo(x+w,y+h+n(998,3));for(let px=Math.floor(w/st)*st;px>0;px-=st)c.lineTo(x+px,y+h+n(Math.round(px/st),3));
+  c.lineTo(x,y+h+n(0,3));for(let py=Math.floor(h/st)*st;py>0;py-=st)c.lineTo(x+n(Math.round(py/st),7)*1.3,y+py);
+  c.closePath();c.fill()}
+
 /* --- typ-effecten --- */
 function typeCount(t,lines,per,maxT){const N=lines.join('').length||1;const p=Math.min(per,maxT/N);return Math.floor(t/p)}
 
@@ -273,7 +282,7 @@ render(S){const{ctx,u}=S;const fF=s=>`400 ${s}px "Libre Caslon Text"`;const L=fi
 ctx.textAlign='left';ctx.textBaseline='middle';const ws=L.lines.map(l=>ctx.measureText(l).width),bw=maxOf(ws),pad=sz*.12;
 let n=typeCount(S.t,L.lines,.055,1.5);
 L.lines.forEach((ln,i)=>{const k=Math.max(0,Math.min(ln.length,n));n-=ln.length;if(!k)return;const x0=lx(S,ws[i],bw);const s=ln.slice(0,k),w=ctx.measureText(s).width,y=top+lh*(i+.5);
-ctx.fillStyle=S.accent;ctx.fillRect(x0-pad,y-lh*.52,w+pad*2,lh*1.0);ctx.fillStyle=S.color;ctx.fillText(s,x0,y+sz*.04)})}});
+ctx.fillStyle=S.accent;box(this.torn,ctx,x0-pad,y-lh*.52,w+pad*2,lh*1.0,sz,i);ctx.fillStyle=S.color;ctx.fillText(s,x0,y+sz*.04)})}});
 
 def({id:'oranjeserif',name:'Serif onthul',align:'left',sample:'Oktober\nmaakte\nme blij',color:'#FF7A1A',accent:'#FF7A1A',
 render(S){const{ctx,u}=S;const fR=s=>`600 ${s}px "Bodoni Moda"`,fI=s=>`italic 600 ${s}px "Bodoni Moda"`;const L=fit(S,fR,130,{lh:.98,maxW:.8});const sz=L.size,lh=sz*.95,top=S.cy-lh*L.lines.length/2;
@@ -289,7 +298,7 @@ ctx.textAlign='left';ctx.textBaseline='middle';const pad=sz*.1;const ws=L.lines.
 const N=L.lines.join('').length||1,per=Math.min(.07,1.5/N);const lead=.25;let n=Math.floor(Math.max(0,S.t-lead)/per);let cur=null;
 L.lines.forEach((ln,i)=>{const x0=lx(S,ws[i],bw),y=top+lh*(i+.5);const k=Math.max(0,Math.min(ln.length,n));n-=ln.length;
 if(cur===null&&k<ln.length)cur=[x0+ctx.measureText(ln.slice(0,k)).width,y];if(!k)return;const s=ln.slice(0,k),w=ctx.measureText(s).width;
-ctx.fillStyle=S.accent;ctx.fillRect(x0-pad,y-lh*.5,w+pad*2,lh*1.02);ctx.fillStyle=S.color;ctx.fillText(s,x0,y+sz*.04)});
+ctx.fillStyle=S.accent;box(this.torn,ctx,x0-pad,y-lh*.5,w+pad*2,lh*1.02,sz,i+5);ctx.fillStyle=S.color;ctx.fillText(s,x0,y+sz*.04)});
 if(cur&&Math.floor(S.t*2.4)%2===0){ctx.fillStyle=S.color;ctx.fillRect(cur[0]+3*u,cur[1]-sz*.42,Math.max(2,3.5*u*S.sz),sz*.84)}}});
 
 def({id:'typvet',name:'Typ vet',align:'left',sample:'NEEM JE\nTIJD.',caps:1,color:'#FF7A1A',accent:'#FF7A1A',
@@ -297,6 +306,30 @@ render(S){const{ctx,u}=S;const fF=s=>`400 ${s}px Anton`;const L=fit(S,fF,170,{lh
 ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=S.color;const ws=L.lines.map(l=>ctx.measureText(l).width),bw=maxOf(ws);
 let n=typeCount(S.t,L.lines,.08,1.3);
 L.lines.forEach((ln,i)=>{const k=Math.max(0,Math.min(ln.length,n));n-=ln.length;if(k)ctx.fillText(ln.slice(0,k),lx(S,ws[i],bw),top+lh*(i+.5))})}});
+
+/* --- 3D donut: tekst rond een torus --- */
+def({id:'donut',name:'Donut',align:'center',sample:'DONUT TEKST',caps:1,color:'#111111',accent:'#111111',
+render(S){const{ctx,W,H}=S;const intro=E.out(prog(S.t,0,.9));if(intro<=0)return;
+ const txt=S.lines.join(' ')+'   ';const mn=Math.min(W,H);const R=mn*.30*S.sz,r=mn*.135*S.sz;
+ const fs=r*.46;ctx.font=`700 ${fs}px Poppins`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=S.color;
+ const tilt=1.0+Math.sin(S.t*.7)*.07,ca=Math.cos(tilt),sa=Math.sin(tilt);
+ const spin=S.t*.55,roll=S.t*.3,D=mn*1.8,sc=lerp(.55,1,intro)*(1-0*0);
+ const chars=[...txt],cw=chars.map(c=>ctx.measureText(c).width),unit=cw.reduce((a,b)=>a+b,0)||1;
+ const rows=Math.max(5,Math.round(2*Math.PI*r/(fs*1.32)));
+ const proj=(x,y,z)=>{const y2=y*ca-z*sa,z2=y*sa+z*ca,k=D/(D-z2)*sc;return[S.cx+x*k,S.cy+y2*k,z2,y2]};
+ const G=[],e=fs*.25;
+ for(let k=0;k<rows;k++){const v=k/rows*2*Math.PI+roll,cv=Math.cos(v),sv=Math.sin(v),rad=R+r*cv;if(rad<=0)continue;
+  const L=2*Math.PI*rad,n=Math.max(1,Math.round(L/unit)),sx=L/(n*unit);let acc=0;
+  for(let rep=0;rep<n;rep++)for(let i=0;i<chars.length;i++){const w=cw[i]*sx,uu=-(acc+w/2)/rad+spin;acc+=w;if(chars[i]===' ')continue;
+   const cu=Math.cos(uu),su=Math.sin(uu);const P=[rad*cu,rad*su,r*sv];
+   const Nx=cv*cu,Ny=cv*su,Nz=sv;const p0=proj(P[0],P[1],P[2]);
+   const N2y=Ny*ca-Nz*sa,N2z=Ny*sa+Nz*ca;const Vx=-P[0],Vy=-p0[3],Vz=D-p0[2],vl=Math.hypot(Vx,Vy,Vz);
+   const d=(Nx*Vx+N2y*Vy+N2z*Vz)/vl;if(d<.03)continue;
+   const Tu=[su,-cu,0],Tv=[sv*cu,sv*su,-cv];
+   const p1=proj(P[0]+Tu[0]*e*sx,P[1]+Tu[1]*e*sx,P[2]),p2=proj(P[0]+Tv[0]*e,P[1]+Tv[1]*e,P[2]+Tv[2]*e);
+   G.push([p0[2],(p1[0]-p0[0])/e,(p1[1]-p0[1])/e,(p2[0]-p0[0])/e,(p2[1]-p0[1])/e,p0[0],p0[1],chars[i],clamp01(d*5)])}}
+ G.sort((a,b)=>a[0]-b[0]);const ga=ctx.globalAlpha*clamp01(intro*1.4);
+ for(const g of G){ctx.save();ctx.globalAlpha=ga*g[8];ctx.transform(g[1],g[2],g[3],g[4],g[5],g[6]);ctx.fillText(g[7],0,0);ctx.restore()}}});
 
 /* --- overige stijlen --- */
 def({id:'stapel',name:'Stapel',align:'center',sample:'NEW IN\nDEZE WEEK',caps:1,color:'#FFE7A3',accent:'#FFE7A3',
@@ -446,6 +479,10 @@ render(S){const{ctx,u}=S;const fF=s=>`800 ${s}px Montserrat`;const L=fit(S,fF,84
 const p=E.out(prog(S.t,0,.8)),tr=sz*lerp(.25,.1,p);ctx.save();ctx.globalAlpha*=p;ctx.fillStyle=S.color;ctx.textBaseline='middle';
 const ws=L.lines.map(l=>trackedW(ctx,l,tr)),bw=maxOf(ws);
 L.lines.forEach((ln,i)=>drawTracked(ctx,ln,lx(S,ws[i],bw),top+lh*(i+.5)+(1-p)*40*u,tr,'left'));ctx.restore()}});
+
+/* papierversies */
+{const a=P.findIndex(p=>p.id==='typmarkeer');P.splice(a+1,0,Object.assign({},P[a],{id:'typmarkeer-papier',name:'Typ + markeer papier',torn:1}));
+ const b=P.findIndex(p=>p.id==='typblokjes');P.splice(b+1,0,Object.assign({},P[b],{id:'typblokjes-papier',name:'Typ blokjes papier',torn:1}));}
 
 /* ---------- state ---------- */
 const FMT={'9:16':[1080,1920],'4:5':[1080,1350],'1:1':[1080,1080]};
