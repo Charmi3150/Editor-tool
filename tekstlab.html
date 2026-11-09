@@ -111,6 +111,32 @@ footer{text-align:center;margin-top:30px;font-size:18px;color:var(--muted)}
 .chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .chip.add{border-style:dashed;color:var(--blue)}
 .chip.del{margin-left:auto;color:#C8432F;border-color:transparent;background:transparent}
+.ltools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.ltools .sp{flex:1}
+.chip.ic{padding:6px 10px;min-width:34px}.chip.ic:disabled{opacity:.35;cursor:default}.chip.ic.del{color:#C8432F}
+.chip.img{background:var(--blue-soft)}.chip.img.on{background:var(--blue)}
+label.chip{display:inline-flex;align-items:center}
+.imgctl{display:none}body.img-mode .imgctl{display:block}body.img-mode #text{display:none}
+body.img-mode .grid{opacity:.35}
+.wrapctl{display:flex;gap:8px;margin-top:10px}.wrapctl .seg{flex:1}.wrapctl .btn{padding:6px 16px;font-size:18px}
+body.img-mode .wrapctl,body.img-mode .wraphint{display:none}
+.tl{padding:12px 12px 14px;user-select:none;-webkit-user-select:none}
+.tl-ruler{position:relative;height:22px;margin-left:86px;border-bottom:1.5px solid var(--hair);cursor:pointer;touch-action:none}
+.tl-ruler span{position:absolute;bottom:3px;font-size:10.5px;color:var(--muted);transform:translateX(-50%)}
+.tl-ruler i{position:absolute;bottom:0;width:1px;height:5px;background:var(--hair)}
+.tl-body{position:relative}
+.tl-row{display:flex;align-items:center;height:38px;border-bottom:1px dashed var(--hair)}
+.tl-row .nm{flex:0 0 80px;margin-right:6px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:var(--muted)}
+.tl-row.on .nm{color:var(--blue)}
+.tl-track{position:relative;flex:1;height:100%;touch-action:none;cursor:pointer}
+.tl-bar{position:absolute;top:7px;bottom:7px;background:var(--blue-soft);border:1.5px solid var(--blue);border-radius:9px;touch-action:none;cursor:grab;font-size:11px;font-weight:600;color:var(--blue);display:flex;align-items:center;padding:0 12px;overflow:hidden;white-space:nowrap}
+.tl-row.on .tl-bar{background:var(--blue);color:#fff}
+.tl-row.img .tl-bar{border-style:dashed}
+.tl-bar b{position:absolute;top:0;bottom:0;width:12px;cursor:ew-resize}
+.tl-bar b.l{left:0}.tl-bar b.r{right:0}
+.tl-bar b::after{content:'';position:absolute;top:50%;left:50%;width:3px;height:12px;margin:-6px 0 0 -1.5px;border-radius:2px;background:currentColor;opacity:.6}
+.tl-headwrap{position:absolute;top:0;bottom:0;left:86px;right:0;pointer-events:none}
+.tl-head{position:absolute;top:-22px;bottom:0;width:2px;margin-left:-1px;background:#C8432F;left:0}
+.tl-head::before{content:'';position:absolute;top:0;left:-5px;border:6px solid transparent;border-top:8px solid #C8432F}
 </style>
 
 </head>
@@ -144,10 +170,35 @@ footer{text-align:center;margin-top:30px;font-size:18px;color:var(--muted)}
     </div>
 
     <div class="col">
-      <div class="section-head"><h2 class="display">Je tekst</h2><span class="hand">meerdere teksten? ＋</span></div>
+      <div class="section-head"><h2 class="display">Lagen</h2><span class="hand">bovenste laag staat eerst</span></div>
       <div class="panel">
         <div class="layers" id="layers"></div>
+        <div class="ltools">
+          <button class="chip add" id="addTxtBtn">＋ Tekst</button>
+          <label class="chip add">＋ Afbeelding<input type="file" id="addImg" accept="image/*" hidden></label>
+          <span class="sp"></span>
+          <button class="chip ic" id="upBtn" title="Laag omhoog">▲</button><button class="chip ic" id="downBtn" title="Laag omlaag">▼</button>
+          <button class="chip ic" id="dupBtn" title="Dupliceer">⧉</button><button class="chip ic del" id="delBtn" title="Verwijder">✕</button>
+        </div>
+        <div class="imgctl">
+          <div class="row"><label>Grootte</label><input type="range" id="imgSize" min="10" max="300" value="100"><span class="v" id="imgSizeV">100%</span></div>
+          <div class="row"><label>Dekking</label><input type="range" id="imgOp" min="0" max="100" value="100"><span class="v" id="imgOpV">100%</span></div>
+          <div class="row"><label>Positie</label><button class="btn" id="imgCenter">Centreren</button></div>
+          <p class="hint">Sleep in het voorbeeld om de afbeelding te verplaatsen. Tip: gebruik een uitgeknipte PNG (zonder achtergrond).</p>
+        </div>
         <textarea id="text" placeholder="Typ je tekst… Leeg = voorbeeldtekst."></textarea>
+        <div class="wrapctl">
+          <div class="seg" id="wrap"><button data-v="one">Eén regel</button><button data-v="manual">Eigen regels</button><button data-v="auto">Automatisch</button></div>
+          <button class="btn" id="nlBtn" title="Nieuwe regel">↵</button>
+        </div>
+        <p class="hint wraphint" id="wrapHint"></p>
+      </div>
+
+      <div class="section-head"><h2 class="display">Tijdlijn</h2><span class="hand">sleep de balkjes</span></div>
+      <div class="panel tl">
+        <div class="tl-ruler" id="tlRuler"></div>
+        <div class="tl-body"><div id="tlRows"></div><div class="tl-headwrap"><div class="tl-head" id="tlHead"></div></div></div>
+        <p class="hint">Versleep een balkje om het moment te kiezen, of trek aan de randjes om het langer of korter te maken. Tik op de tijdlijn om naar dat moment te springen.</p>
       </div>
 
       <div class="section-head"><h2 class="display">Kies je stijl</h2><span class="hand">tik nog eens = aanpassen</span></div>
@@ -195,6 +246,7 @@ footer{text-align:center;margin-top:30px;font-size:18px;color:var(--muted)}
 
 <div class="sheet" id="sheet">
   <div class="sh-head"><b id="shTitle" class="display">Stijl aanpassen</b><button class="btn pri" id="shClose">Klaar</button></div>
+  <div class="row hidden" id="partRow"><label>Donut-deel</label><select id="part"><option value="all">Hele donut</option><option value="back">Enkel achterkant</option><option value="front">Enkel voorkant</option></select></div>
   <div class="row"><label>Uitlijning</label><div class="seg" id="align">
     <button data-v="auto">Stijl</button><button data-v="left" aria-label="Links">⇤ Links</button><button data-v="center" aria-label="Midden">↔ Midden</button><button data-v="right" aria-label="Rechts">Rechts ⇥</button></div></div>
   <div class="row"><label>Duur</label><input type="range" id="dur2" min="10" max="300" value="40"><span class="v" id="durV2">4.0s</span></div>
@@ -239,7 +291,7 @@ function fit(S,fontFn,base,opt={}){
   const {ctx,W,H}=S,track=opt.track||0,maxW=W*(opt.maxW||.86),lhF=opt.lh||1.2;
   let size=base*S.u*S.sz;
   const meas=s=>{ctx.font=fontFn(size);return ctx.measureText(s).width+track*size*Math.max(0,[...s].length-1)};
-  const wrap=()=>{const out=[];for(const raw of S.lines){const w=raw.split(/\s+/).filter(Boolean);if(!w.length){out.push('');continue}let cur=w[0];for(let i=1;i<w.length;i++){const tst=cur+' '+w[i];if(meas(tst)<=maxW)cur=tst;else{out.push(cur);cur=w[i]}}out.push(cur)}return out};
+  const wrap=()=>{if(S.wrap&&S.wrap!=='auto')return S.lines.slice();const out=[];for(const raw of S.lines){const w=raw.split(/\s+/).filter(Boolean);if(!w.length){out.push('');continue}let cur=w[0];for(let i=1;i<w.length;i++){const tst=cur+' '+w[i];if(meas(tst)<=maxW)cur=tst;else{out.push(cur);cur=w[i]}}out.push(cur)}return out};
   let lines=wrap();let widest=Math.max(1,...lines.map(meas));
   if(widest>maxW){size*=maxW/widest;lines=wrap()}
   if(lines.length*size*lhF>H*.86){size*=H*.86/(lines.length*size*lhF);lines=wrap()}
@@ -338,7 +390,7 @@ render(S){const{ctx,W,H}=S;const intro=E.out(prog(S.t,0,.9));if(intro<=0)return;
    const cu=Math.cos(uu),su=Math.sin(uu);const P=[rad*cu,rad*su,r*sv];
    const Nx=cv*cu,Ny=cv*su,Nz=sv;const p0=proj(P[0],P[1],P[2]);
    const N2y=Ny*ca-Nz*sa,N2z=Ny*sa+Nz*ca;const Vx=-P[0],Vy=-p0[3],Vz=D-p0[2],vl=Math.hypot(Vx,Vy,Vz);
-   const d=(Nx*Vx+N2y*Vy+N2z*Vz)/vl;if(d<.03)continue;
+   const d=(Nx*Vx+N2y*Vy+N2z*Vz)/vl;if(d<.03)continue;if(S.part==='front'&&P[1]<=0||S.part==='back'&&P[1]>0)continue;
    const Tu=[su,-cu,0],Tv=[sv*cu,sv*su,-cv];
    const p1=proj(P[0]+Tu[0]*e*sx,P[1]+Tu[1]*e*sx,P[2]),p2=proj(P[0]+Tv[0]*e,P[1]+Tv[1]*e,P[2]+Tv[2]*e);
    G.push([p0[2],(p1[0]-p0[0])/e,(p1[1]-p0[1])/e,(p2[0]-p0[0])/e,(p2[1]-p0[1])/e,p0[0],p0[1],chars[i],clamp01(d*5)])}}
@@ -502,9 +554,15 @@ L.lines.forEach((ln,i)=>drawTracked(ctx,ln,lx(S,ws[i],bw),top+lh*(i+.5)+(1-p)*40
 /* ---------- state ---------- */
 const FMT={'9:16':[1080,1920],'4:5':[1080,1350],'1:1':[1080,1080]};
 const st={dur:4,ar:'9:16',bg:'color',bgCol:'#ffffff',media:null,audio:true};
-const LDEF={preset:'typmarkeer',text:'',sz:1,color:null,accent:null,delay:.2,out:'fade',align:'auto',speed:1,lead:1,cx:.5,cy:.5};
+const LDEF={type:'text',wrap:'auto',end:null,part:'all',preset:'typmarkeer',text:'',sz:1,color:null,accent:null,delay:.2,out:'fade',align:'auto',speed:1,lead:1,cx:.5,cy:.5};
 let layers=[Object.assign({},LDEF)],cur=0;const L=()=>layers[cur];
-function drawLayers(c,W,H,time,over){layers.forEach(l=>drawText(c,W,H,time,Object.assign({},l,{dur:st.dur},over||{}),getP(l.preset)))}
+const lEnd=l=>Math.min(st.dur,l.end==null?st.dur:l.end);
+function drawLayers(c,W,H,time,over){const fin=over&&over.final;layers.forEach(l=>{const e=lEnd(l),s0=l.delay||0;
+  if(l.type==='image'){if(fin||(time>=s0&&time<=e))drawImageLayer(c,W,H,l);return}
+  if(!fin&&time>e+.001)return;
+  drawText(c,W,H,fin?s0+60:time,Object.assign({},l,{dur:fin?1e9:e},over||{}),getP(l.preset))})}
+function drawImageLayer(c,W,H,l){const im=l.img;if(!im||!im.naturalWidth)return;const w=W*l.sz,h=w*im.naturalHeight/im.naturalWidth;
+  c.save();c.globalAlpha=l.opacity;c.drawImage(im,W*l.cx-w/2,H*l.cy-h/2,w,h);c.restore()}
 let t=0,playing=true,last=performance.now(),exporting=false,dragging=false,snapX=false,snapY=false;
 const $=id=>document.getElementById(id);
 const cv=$('main'),ctx=cv.getContext('2d');
@@ -522,7 +580,7 @@ function drawBg(c,W,H,o){
 function drawText(c,W,H,time,o,pr){
   const lt=time-o.delay;if(lt<0)return;
   const outD=.45,outP=o.out==='none'?0:E.inOut(prog(time,o.dur-outD,outD));if(outP>=1)return;
-  const S={ctx:c,W,H,u:W/1080,lead:o.lead||1,t:lt*(o.speed||1),align:(o.align&&o.align!=='auto')?o.align:(pr.align||'center'),lines:prepLines(o.text,pr),cx:W*o.cx,cy:H*o.cy,sz:o.sz,color:o.color||pr.color,accent:o.accent||pr.accent,accentSet:!!o.accent};
+  const S={ctx:c,W,H,u:W/1080,part:o.part||'all',lead:o.lead||1,t:lt*(o.speed||1),align:(o.align&&o.align!=='auto')?o.align:(pr.align||'center'),lines:(o.wrap==='one'?[prepLines(o.text,pr).join(' ')]:prepLines(o.text,pr)),wrap:o.wrap||'auto',cx:W*o.cx,cy:H*o.cy,sz:o.sz,color:o.color||pr.color,accent:o.accent||pr.accent,accentSet:!!o.accent};
   c.save();c.globalAlpha=1-(o.out==='fade'||o.out==='zoom'?outP:outP*.9);
   if(o.out==='up')c.translate(0,-outP*H*.08);
   if(o.out==='zoom'){const s=1+outP*.35;c.translate(S.cx,S.cy);c.scale(s,s);c.translate(-S.cx,-S.cy)}
@@ -549,13 +607,13 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
-function updBar(){$('scrub').value=Math.round(Math.min(1,t/st.dur)*1000);$('time').textContent=`${Math.min(t,st.dur).toFixed(1)} / ${st.dur.toFixed(1)}s`}
+function updBar(){const ph=$('tlHead');if(ph)ph.style.left=(Math.min(1,t/st.dur)*100)+'%';$('scrub').value=Math.round(Math.min(1,t/st.dur)*1000);$('time').textContent=`${Math.min(t,st.dur).toFixed(1)} / ${st.dur.toFixed(1)}s`}
 
 /* ---------- thumbnails ---------- */
 const thumbs=[];let lastThumb=0;
 function buildGrid(){const g=$('grid');P.forEach(pr=>{const b=document.createElement('button');b.dataset.id=pr.id;b.className='th'+(pr.id===L().preset?' on':'');
   const c=document.createElement('canvas');c.width=200;c.height=200;const s=document.createElement('span');s.textContent=pr.name;const gr=document.createElement('i');gr.className='gear';gr.textContent='⚙︎';b.append(c,s,gr);g.append(b);
-  b.onclick=()=>{if(L().preset===pr.id){openSheet();return}L().preset=pr.id;L().color=null;L().accent=null;document.querySelectorAll('.th').forEach(x=>x.classList.remove('on'));b.classList.add('on');syncColors();syncSheet();restart()};
+  b.onclick=()=>{if(L().type==='image'){status('Kies eerst een tekstlaag om een stijl te geven.');return}if(L().preset===pr.id){openSheet();return}L().preset=pr.id;L().color=null;L().accent=null;document.querySelectorAll('.th').forEach(x=>x.classList.remove('on'));b.classList.add('on');syncColors();syncSheet();restart()};
   thumbs.push({pr,c,ctx:c.getContext('2d'),vis:true,b})});
   if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>es.forEach(e=>{const th=thumbs.find(x=>x.b===e.target);if(th)th.vis=e.isIntersecting}));thumbs.forEach(th=>io.observe(th.b))}
 }
@@ -566,30 +624,74 @@ function drawThumbs(now){const tt=(now/1000)%(tOpts.dur+.4);thumbs.forEach(th=>{
 function restart(){t=0;const v=vid();if(v){v.currentTime=0}}
 function syncColors(){const pr=getP(L().preset);$('col').value=L().color||pr.color;$('acc').value=L().accent||pr.accent}
 $('text').oninput=e=>{L().text=e.target.value;renderLayers()};
+const WRAPHINT={one:'Alles op één regel, ook als je returns typt. De tekst wordt kleiner als hij niet past.',manual:'De tekst breekt alleen waar jij een return (↵) zet. Past een regel niet, dan wordt alles kleiner.',auto:'Breekt bij je returns én automatisch als een regel te breed is.'};
+function syncWrap(){const w=L().wrap||'auto';document.querySelectorAll('#wrap button').forEach(b=>b.classList.toggle('on',b.dataset.v===w));$('wrapHint').textContent=WRAPHINT[w]}
+document.querySelectorAll('#wrap button').forEach(b=>b.onclick=()=>{L().wrap=b.dataset.v;syncWrap()});
+$('nlBtn').onclick=()=>{const ta=$('text');const a=ta.selectionStart??ta.value.length,b=ta.selectionEnd??a;ta.value=ta.value.slice(0,a)+'\n'+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+1;L().text=ta.value;if(L().wrap==='one')L().wrap='manual';syncWrap();renderLayers();ta.focus()};
+/* ---------- tijdlijn ---------- */
+let skipTL=false;
+function seek(x){playing=false;$('play').textContent='▶';t=Math.max(0,Math.min(st.dur,x));const v=vid();if(v){v.pause();v.currentTime=t}}
+function renderRuler(){const r=$('tlRuler');r.innerHTML='';const d=st.dur,step=d<=6?1:d<=15?2:5;
+  for(let s=0;s<=d+1e-6;s+=step){const sp=document.createElement('span');sp.style.left=(s/d*100)+'%';sp.textContent=s+'s';r.append(sp)}
+  for(let s=0;s<=d+1e-6;s+=step/2){const i=document.createElement('i');i.style.left=(s/d*100)+'%';r.append(i)}}
+function renderTimeline(){renderRuler();const rows=$('tlRows');rows.innerHTML='';
+  for(let i=layers.length-1;i>=0;i--){const l=layers[i],row=document.createElement('div');row.className='tl-row'+(i===cur?' on':'')+(l.type==='image'?' img':'');
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=layerName(l,i);nm.onclick=()=>selectLayer(i);
+    const tr=document.createElement('div');tr.className='tl-track';const bar=document.createElement('div');bar.className='tl-bar';
+    const s0=Math.min(l.delay||0,st.dur),e=lEnd(l);bar.style.left=(s0/st.dur*100)+'%';bar.style.width=(Math.max(0,e-s0)/st.dur*100)+'%';
+    bar.innerHTML='<b class="l"></b><span>'+(s0.toFixed(1))+'–'+(e.toFixed(1))+'s</span><b class="r"></b>';
+    tr.append(bar);row.append(nm,tr);rows.append(row);
+    tr.addEventListener('pointerdown',ev=>{if(ev.target===tr){const r=tr.getBoundingClientRect();seek((ev.clientX-r.left)/r.width*st.dur)}});
+    bar.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();if(cur!==i){skipTL=true;selectLayer(i);skipTL=false;document.querySelectorAll('.tl-row').forEach(rw=>rw.classList.remove('on'));row.classList.add('on')}const L0=layers[i];
+      const mode=ev.target.classList.contains('l')?'l':ev.target.classList.contains('r')?'r':'m';const r=tr.getBoundingClientRect(),x0=ev.clientX,a0=L0.delay||0,b0=lEnd(L0);
+      try{bar.setPointerCapture(ev.pointerId)}catch(e){}
+      const mv=e2=>{const dt=Math.round((e2.clientX-x0)/r.width*st.dur*10)/10,D=st.dur,MIN=.3;let a=a0,b=b0;
+        if(mode==='m'){a=Math.max(0,Math.min(D-(b0-a0),a0+dt));b=a+(b0-a0)}else if(mode==='l'){a=Math.max(0,Math.min(b0-MIN,a0+dt))}else{b=Math.min(D,Math.max(a0+MIN,b0+dt))}
+        L0.delay=Math.round(a*10)/10;L0.end=b>=D-.05?null:Math.round(b*10)/10;
+        seek(mode==='r'?Math.max(L0.delay,lEnd(L0)-.6):L0.delay+.05);
+        const s1=L0.delay,e1=lEnd(L0);bar.style.left=(s1/D*100)+'%';bar.style.width=((e1-s1)/D*100)+'%';bar.querySelector('span').textContent=s1.toFixed(1)+'–'+e1.toFixed(1)+'s'};
+      const up=()=>{bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up);bar.removeEventListener('pointercancel',up);syncSheet();renderTimeline()};
+      bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);bar.addEventListener('pointercancel',up)})}}
+$('tlRuler').addEventListener('pointerdown',ev=>{const r=$('tlRuler').getBoundingClientRect();seek((ev.clientX-r.left)/r.width*st.dur);
+  const mv=e2=>seek((e2.clientX-r.left)/r.width*st.dur);const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up)};addEventListener('pointermove',mv);addEventListener('pointerup',up)});
+function layerName(l,i){if(l.type==='image')return '🖼 '+(l.name||'Afbeelding');let n=(l.text.trim().split('\n')[0].slice(0,16))||('Tekst '+(i+1));if(l.preset==='donut'&&l.part!=='all')n+=l.part==='front'?' · voor':' · achter';return n}
 function renderLayers(){const el=$('layers');el.innerHTML='';
-  layers.forEach((l,i)=>{const b=document.createElement('button');b.className='chip'+(i===cur?' on':'');b.textContent=(l.text.trim().split('\n')[0].slice(0,16))||('Tekst '+(i+1));b.onclick=()=>selectLayer(i);el.append(b)});
-  const add=document.createElement('button');add.className='chip add';add.textContent='＋ Tekst';add.onclick=addLayer;el.append(add);
-  if(layers.length>1){const d=document.createElement('button');d.className='chip del';d.textContent='Verwijder';d.onclick=delLayer;el.append(d)}}
-function selectLayer(i){cur=i;$('text').value=L().text;document.querySelectorAll('.th').forEach(th=>th.classList.toggle('on',th.dataset.id===L().preset));syncSheet();renderLayers()}
-function addLayer(){const y=L().cy+.18;layers.push(Object.assign({},LDEF,{preset:L().preset,cy:y>.88?.2:y}));selectLayer(layers.length-1);restart();try{$('text').focus()}catch(e){}}
+  /* bovenste laag eerst tonen */
+  for(let i=layers.length-1;i>=0;i--){const l=layers[i];const b=document.createElement('button');b.className='chip'+(i===cur?' on':'')+(l.type==='image'?' img':'');b.textContent=layerName(l,i);b.onclick=()=>selectLayer(i);el.append(b)}
+  const isImg=L().type==='image';document.body.classList.toggle('img-mode',isImg);
+  $('upBtn').disabled=cur>=layers.length-1;$('downBtn').disabled=cur<=0;$('delBtn').disabled=layers.length<2;
+  if(!skipTL)renderTimeline();syncWrap();
+  if(isImg){$('imgSize').value=Math.round(L().sz*100);$('imgSizeV').textContent=Math.round(L().sz*100)+'%';$('imgOp').value=Math.round(L().opacity*100);$('imgOpV').textContent=Math.round(L().opacity*100)+'%'}}
+function selectLayer(i){cur=i;if(L().type!=='image'){$('text').value=L().text;document.querySelectorAll('.th').forEach(th=>th.classList.toggle('on',th.dataset.id===L().preset));syncSheet()}renderLayers()}
+function moveLayer(dir){const j=cur+dir;if(j<0||j>=layers.length)return;[layers[cur],layers[j]]=[layers[j],layers[cur]];cur=j;renderLayers()}
+function dupLayer(){const c=Object.assign({},L());layers.splice(cur+1,0,c);selectLayer(cur+1)}
+function addImageFile(f){if(!f)return;const url=URL.createObjectURL(f);const im=new Image();
+  im.onload=()=>{layers.push({type:'image',delay:0,end:null,img:im,url,name:f.name.replace(/\.[^.]+$/,'').slice(0,14),cx:.5,cy:.5,sz:1,opacity:1,preset:'',text:''});selectLayer(layers.length-1)};
+  im.onerror=()=>{status('Deze afbeelding kan niet geopend worden. Gebruik PNG of JPG (HEIC werkt enkel in Safari).');URL.revokeObjectURL(url)};im.src=url}
+$('addImg').onchange=e=>{addImageFile(e.target.files[0]);e.target.value=''};
+$('addTxtBtn').onclick=addLayer;$('upBtn').onclick=()=>moveLayer(1);$('downBtn').onclick=()=>moveLayer(-1);$('dupBtn').onclick=dupLayer;$('delBtn').onclick=delLayer;
+$('imgSize').oninput=e=>{L().sz=e.target.value/100;renderLayers()};$('imgOp').oninput=e=>{L().opacity=e.target.value/100;renderLayers()};
+$('imgCenter').onclick=()=>{L().cx=.5;L().cy=.5};
+function addLayer(){const y=L().cy+.18;const base=layers.slice().reverse().find(l=>l.type!=='image');layers.push(Object.assign({},LDEF,{preset:base?base.preset:LDEF.preset,cy:y>.88?.2:y}));selectLayer(layers.length-1);restart();try{$('text').focus()}catch(e){}}
 function delLayer(){if(layers.length<2)return;layers.splice(cur,1);selectLayer(Math.max(0,cur-1))}
 $('size').oninput=e=>{L().sz=e.target.value/100;$('sizeV').textContent=e.target.value+'%'};
 $('col').oninput=e=>{L().color=e.target.value};
 $('acc').oninput=e=>{L().accent=e.target.value};
 $('resetCol').onclick=()=>{L().color=null;L().accent=null;syncColors()};
-function setDur(d){st.dur=d;['dur','dur2'].forEach(id=>$(id).value=Math.round(d*10));$('durV').textContent=$('durV2').textContent=d.toFixed(1)+'s'}
+function setDur(d){st.dur=d;setTimeout(renderTimeline,0);['dur','dur2'].forEach(id=>$(id).value=Math.round(d*10));$('durV').textContent=$('durV2').textContent=d.toFixed(1)+'s'}
 $('dur').oninput=e=>setDur(e.target.value/10);$('dur2').oninput=e=>setDur(e.target.value/10);
-$('delay').oninput=e=>{L().delay=e.target.value/10;$('delayV').textContent=L().delay.toFixed(1)+'s';restart()};
+$('delay').oninput=e=>{L().delay=e.target.value/10;renderTimeline();$('delayV').textContent=L().delay.toFixed(1)+'s';restart()};
 $('out').onchange=e=>{L().out=e.target.value};
 $('ar').onchange=e=>{st.ar=e.target.value;setFormat()};
-function syncSheet(){const pr=getP(L().preset);$('shTitle').textContent=pr.name+' aanpassen';
+function syncSheet(){if(L().type==='image')return;const pr=getP(L().preset);$('shTitle').textContent=pr.name+' aanpassen';$('partRow').classList.toggle('hidden',L().preset!=='donut');$('part').value=L().part||'all';
   document.querySelectorAll('#align button').forEach(x=>x.classList.toggle('on',x.dataset.v===L().align));
   $('speed').value=Math.round(L().speed*100);$('speedV').textContent=(Math.round(L().speed*100)/100).toFixed(2).replace(/0$/,'')+'×';
   $('lead').value=Math.round(L().lead*100);$('leadV').textContent=Math.round(L().lead*100)+'%';$('size').value=Math.round(L().sz*100);$('sizeV').textContent=Math.round(L().sz*100)+'%';
   $('delay').value=Math.round(L().delay*10);$('delayV').textContent=L().delay.toFixed(1)+'s';$('out').value=L().out;syncColors()}
 function openSheet(){syncSheet();$('sheet').classList.add('on')}
-$('openSheet').onclick=openSheet;$('shClose').onclick=()=>$('sheet').classList.remove('on');
+$('openSheet').onclick=()=>{if(L().type==='image')return;openSheet()};$('shClose').onclick=()=>$('sheet').classList.remove('on');
 document.querySelectorAll('#align button').forEach(x=>x.onclick=()=>{L().align=x.dataset.v;syncSheet()});
+$('part').onchange=e=>{L().part=e.target.value;renderLayers()};
 $('lead').oninput=e=>{L().lead=e.target.value/100;syncSheet()};
 $('speed').oninput=e=>{L().speed=e.target.value/100;syncSheet()};
 $('resetStyle').onclick=()=>{Object.assign(L(),{align:'auto',speed:1,lead:1,sz:1,color:null,accent:null,delay:.2,out:'fade'});syncSheet();restart()};
@@ -601,7 +703,7 @@ function bgUI(){const b=st.bg;$('bgColRow').classList.toggle('hidden',b!=='color
   $('audioRow').classList.toggle('hidden',!(b==='media'&&st.media&&st.media.type==='video'));
   $('bgHint').textContent={   media:'Je clip of foto komt achter de tekst. Bij een video volgt de duur automatisch de lengte van je clip. Exporteer en zet het resultaat zo in Edits.',
    color:'Standaard wit. Tik op het kleurvakje om een andere kleur te kiezen.',
-   transparent:'Transparante PNG werkt overal. Transparante video lukt alleen in Chrome op een computer (WebM); kies anders een effen kleur of je eigen video.'}[b]}
+   transparent:'Transparante PNG werkt overal. Transparante video (WebM) lukt alleen in Chrome op een computer, en niet elke app leest de transparantie (Canva kan hem zwart maken). Tip: zet je foto of clip als achtergrond en exporteer alles samen als MP4.'}[b]}
 $('bg').onchange=e=>{st.bg=e.target.value;bgUI();const v=st.media&&st.media.type==='video'?st.media.el:null;if(v){if(st.bg==='media'&&playing)v.play().catch(()=>{});else v.pause()}};
 $('bgCol').oninput=e=>{st.bgCol=e.target.value};
 $('audio').onchange=e=>{st.audio=e.target.checked};
@@ -641,6 +743,8 @@ let audioCtx=null,audioSrc=null,audioDest=null;
 $('expVid').onclick=async()=>{
   if(exporting)return;const alpha=st.bg==='transparent';
   if(st.bg==='media'&&!st.media){status('Kies eerst een video of foto als achtergrond.');return}
+  const isSafari=/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent)||/iPhone|iPad/.test(navigator.userAgent);
+  if(alpha&&isSafari){status('Transparante video kan niet op iPhone/Safari: je krijgt dan een zwarte achtergrond. Kies "Eigen video of foto" of een effen kleur, of exporteer in Chrome op je computer.');return}
   const mime=pickMime(alpha);
   if(!mime||!cv.captureStream){status(alpha?'Transparante video werkt hier niet. Kies een effen kleur of exporteer een PNG.':'Video-opname wordt door deze browser niet ondersteund. Probeer Safari of Chrome.');return}
   exporting=true;$('expVid').disabled=true;status('Bezig met opnemen…');$('prog').style.display='block';const bar=$('prog').firstElementChild;
@@ -672,7 +776,7 @@ $('expVid').onclick=async()=>{
 };
 $('expPng').onclick=()=>{
   const[W,H]=FMT[st.ar];const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  drawBg(x,W,H,st);drawLayers(x,W,H,Math.max(st.dur,...layers.map(l=>l.delay))+5,{out:'none'});
+  drawBg(x,W,H,st);drawLayers(x,W,H,0,{out:'none',final:true});
   c.toBlob(b=>{if(b)showModal(b,`textlab-${L().preset}.png`,'img')},'image/png')};
 
 /* ---------- start ---------- */
