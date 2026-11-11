@@ -3394,7 +3394,8 @@ function previewLoop(now){
     updatePlayButton();
   }
   document.getElementById('scrub').value = Math.round((previewT/tEnd)*1000);
-  draw();
+  _drawFromLoop = true;
+  try{ draw(); } finally { _drawFromLoop = false; }
   if(previewPlaying) requestAnimationFrame(previewLoop);
 }
 
@@ -3726,8 +3727,42 @@ function textExtents(){
 // Where the animated icon's centre sits for a point on the path:
 // on the line itself, or shifted perpendicular to it so the visible
 // part of the image sits just above/below the letters (+ animGap).
+// Vloeiende richting van de lijn: in plaats van de hoek van één klein
+// lijnstukje (4px, springt bij elk knikpunt) nemen we de richting tussen
+// twee punten een stukje voor en na s. Zo draait/verschuift het icoon
+// zonder schokjes.
+function smoothPosAtArcLength(path, s){
+  const L = path.totalLength;
+  s = Math.max(0, Math.min(L, s));
+  const p = posAtArcLength(path, s);
+  const h = Math.min(30, L/2);
+  const a = posAtArcLength(path, Math.max(0, s-h));
+  const b = posAtArcLength(path, Math.min(L, s+h));
+  const dx = b.x-a.x, dy = b.y-a.y;
+  if(Math.hypot(dx,dy) > 0.001) p.angle = Math.atan2(dy, dx);
+  return p;
+}
+
+// Waar het icoon moet stoppen: aan het einde van de tekst (niet aan het
+// einde van de lijn). Bij herhaalde tekst loopt de tekst over de hele
+// lijn, dan blijft het einde van de lijn.
+function animEndS(path, icon){
+  const L = path.totalLength;
+  if(!waveText || waveRepeat) return L;
+  if(!animEndS._c) animEndS._c = document.createElement('canvas').getContext('2d');
+  const c = animEndS._c;
+  c.font = buildFontCss();
+  let w = 0;
+  for(let i=0;i<waveText.length;i++) w += c.measureText(waveText[i]).width + waveLetterSpacing;
+  w -= waveLetterSpacing; // geen spatiëring na de laatste letter
+  let end = w;
+  // Op de lijn zelf: net achter de laatste letter stoppen i.p.v. erover.
+  if(animPlacement === 'on' && icon) end += icon.w/2 + animGap;
+  return Math.max(0, Math.min(L, end));
+}
+
 function animIconPlacement(path, s, icon){
-  const pos = posAtArcLength(path, s);
+  const pos = smoothPosAtArcLength(path, s);
   if(animPlacement === 'on') return pos;
   const dir = animPlacement === 'above' ? -1 : 1;
   // normal pointing "down" relative to direction of travel is (-sin, cos)
@@ -3772,7 +3807,7 @@ function renderLayerContent(ctx, layer, path, animT, offsetX){
     if(!icon) return null;
     if(String(icon.id)===String(animIconId)){
       const u = easedProgressAt(animT);
-      const s = u * path.totalLength;
+      const s = u * animEndS(path, icon);
       const pos = animIconPlacement(path, s, icon);
       ctx.save();
       ctx.translate(pos.x, pos.y);
@@ -3986,9 +4021,27 @@ function drawSlideDividers(ctx){
   ctx.restore();
 }
 
+// Tijdens het afspelen in de editor: tekst/lijn/achtergrond één keer in
+// een cache tekenen en per frame alleen het icoon opnieuw — anders wordt
+// elke letter elk frame opnieuw getekend en hapert het icoon.
+// Elke gewone draw() (een instelling wijzigt) gooit de cache weg.
+var _playCache = null;
+var _drawFromLoop = false;
 function draw(){
-  const path = buildWavePath();
-  lastAnimPos = renderSceneAt(bctx, previewT, 0, FULL_W, FULL_H, path);
+  let path;
+  const animLayer = layers.find(l=>l.type==='icon' && String(l.id)===String(animIconId));
+  if(_drawFromLoop && previewPlaying && animLayer && animLayer.visible){
+    if(!_playCache){
+      const p = buildWavePath();
+      _playCache = {path: p, caches: buildExportCaches(p)};
+    }
+    path = _playCache.path;
+    lastAnimPos = renderCachedFrame(bctx, _playCache.caches, previewT, 0, FULL_W, FULL_H, path);
+  } else {
+    if(!_drawFromLoop) _playCache = null;
+    path = buildWavePath();
+    lastAnimPos = renderSceneAt(bctx, previewT, 0, FULL_W, FULL_H, path);
+  }
 
   octx.clearRect(0,0,FULL_W,FULL_H);
   drawSlideDividers(octx);
@@ -4640,7 +4693,7 @@ function openPreviewModal(){
   const path = buildWavePath();
   const tEnterList = computeEnterTimes(path);
   const tEndAll = animDelay + animDuration + animHold;
-  previewModalState = {path, tEnterList, tEndAll, slideIndex:0, playing:true, currentAnimT:0};
+  previewModalState = {path, tEnterList, tEndAll, slideIndex:0, playing:true, currentAnimT:0, caches: buildExportCaches(path)};
   document.getElementById('previewOverlay').classList.add('open');
   renderPreviewDots();
   startPreviewSlide(0);
@@ -4678,7 +4731,9 @@ function previewModalLoop(){
       document.getElementById('previewPlayPauseBtn').textContent = '▶ Opnieuw';
     }
   }
-  renderSceneAt(previewCtx, st.currentAnimT, st.slideIndex*SLIDE_W, SLIDE_W, SLIDE_H, st.path);
+  const animLayer = layers.find(l=>l.type==='icon' && String(l.id)===String(animIconId));
+  if(animLayer && animLayer.visible) renderCachedFrame(previewCtx, st.caches, st.currentAnimT, st.slideIndex*SLIDE_W, SLIDE_W, SLIDE_H, st.path);
+  else renderSceneAt(previewCtx, st.currentAnimT, st.slideIndex*SLIDE_W, SLIDE_W, SLIDE_H, st.path);
   st.rafId = requestAnimationFrame(previewModalLoop);
 }
 
@@ -4793,7 +4848,8 @@ function computeEnterTimes(path){
   for(let i=1;i<N_SLIDES;i++){
     const boundaryX = Math.max(0, i*SLIDE_W - halfW);
     const sBoundary = arcLengthAtX(path, boundaryX);
-    const pBoundary = path.totalLength>0 ? sBoundary/path.totalLength : 0;
+    const endS = animEndS(path, icon);
+    const pBoundary = endS>0 ? Math.min(1, sBoundary/endS) : 0;
     const u = invertEasing(pBoundary, animEasing);
     const t = animDelay + u*animDuration;
     const tEndAll = animDelay+animDuration+animHold;
@@ -4851,15 +4907,17 @@ function renderCachedFrame(ctx, caches, animT, offsetX, w, h, path){
   const icon = getAnimIcon();
   if(icon && caches.iconLayerIdx>=0){
     const u = easedProgressAt(animT);
-    const s = u * path.totalLength;
+    const s = u * animEndS(path, icon);
     const pos = animIconPlacement(path, s, icon);
     ctx.save();
     ctx.translate(pos.x - offsetX, pos.y);
     if(animRotate) ctx.rotate(pos.angle);
     ctx.drawImage(icon.img, -icon.w/2, -icon.h/2, icon.w, icon.h);
     ctx.restore();
+    var animPos = {x: pos.x - offsetX, y: pos.y, w: icon.w, h: icon.h};
   }
   ctx.drawImage(caches.above, offsetX, 0, w, h, 0, 0, w, h);
+  return animPos || null;
 }
 
 // ---------- MP4 export via WebCodecs (primary path) ----------
