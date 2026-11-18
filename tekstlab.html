@@ -116,7 +116,7 @@ footer{text-align:center;margin-top:30px;font-size:18px;color:var(--muted)}
 .chip.img{background:var(--blue-soft)}.chip.img.on{background:var(--blue)}
 label.chip{display:inline-flex;align-items:center}
 .imgctl{display:none}body.img-mode .imgctl{display:block}body.img-mode #text{display:none}
-body.img-mode .grid{opacity:.35}
+
 .wrapctl{display:flex;gap:8px;margin-top:10px}.wrapctl .seg{flex:1}.wrapctl .btn{padding:6px 16px;font-size:18px}
 body.img-mode .wrapctl,body.img-mode .wraphint{display:none}
 .tl{padding:12px 12px 14px;user-select:none;-webkit-user-select:none}
@@ -346,16 +346,21 @@ select{min-width:0}
   .tl-bar.sel{box-shadow:0 0 0 2px #17181C,0 0 0 4px #fff}
   .mute{background:#2C3352;color:#C9D3FF}.mute.off{background:#4A2723;color:#FF8B7A}
   /* paneel per tab */
-  body[data-mt] .tl-scroll{display:none}
-  body[data-mt] .b-tijdlijn{flex:none}
+  /* tijdlijn blijft altijd zichtbaar: plakt bovenaan, paneel scrollt eronder */
+  body[data-mt] .pv{height:28dvh}
+  body[data-mt] .b-tijdlijn{flex:none;position:sticky;top:0;z-index:10;background:var(--cream);padding-bottom:6px;border-bottom:1px solid var(--hair);margin-bottom:8px}
+  body[data-mt] .tl-scroll{flex:none;max-height:22dvh;min-height:84px}
   body[data-mt] .col{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 8px 10px}
+  body[data-mt] .col>.colL>.blk,body[data-mt] .col>.colR>.blk{padding:0}
+  #tbZo,#tbZi{display:none}
   body[data-mt=media] .b-media,
   body[data-mt=tekst] .b-lagen,body[data-mt=tekst] .b-stijl,
   body[data-mt=bewerk] .b-insp,body.img-mode[data-mt=bewerk] .b-lagen,
   body[data-mt=achtergrond] .b-achtergrond,body[data-mt=achtergrond] .b-video,
   body[data-mt=export] .b-export{display:block;margin-bottom:10px}
   body.img-mode[data-mt=bewerk] .b-insp{display:none}
-  body.img-mode[data-mt=tekst] .b-lagen{display:none}
+  body[data-mt=tekst] .imgctl{display:none!important}
+  body.img-mode[data-mt=tekst] .mt-hint{display:block}
   body[data-mt=tekst] .b-stijl{order:2!important}body[data-mt=tekst] .b-lagen{order:1!important}
   .b-stijl .hint,#openSheet{display:none}
   .grid{grid-template-columns:repeat(auto-fill,minmax(74px,1fr))!important;gap:6px}
@@ -371,6 +376,13 @@ select{min-width:0}
   .mtabs button.on{color:#fff;background:#2C3352}
   .modal .mbox{background:var(--card);border-color:var(--hair)}
 }
+
+.mt-hint{display:none;margin:0 0 8px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,20px);background:#fff;color:#15173A;font-weight:600;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:60;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ver{display:none}
+@media(min-width:1100px),(max-width:760px){.ver{display:inline;font-size:11px;color:var(--muted);margin-left:4px}}
+@media(min-width:1100px){.toast{bottom:28vh}}
 </style>
 
 </head>
@@ -386,6 +398,7 @@ select{min-width:0}
       <path d="M30 32h20M40 32v20M35 52h10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
     </svg>
     <h1 class="display">Text<br>Lab</h1>
+    <span class="ver">versie 18 nov</span>
     <button class="topexp" id="topExp">Exporteren</button>
     <div class="hand">typ je tekst,<br>laat hem bewegen</div>
     <div class="pills">
@@ -408,7 +421,7 @@ select{min-width:0}
       <div class="colL" data-tab="media">
       <div class="ltabs" id="ltabs"><button data-tab="media" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Media</button><button data-tab="stijl"><svg viewBox="0 0 24 24"><path d="M4 19 9 5l5 14M6 14h6M15 19v-6a2.5 2.5 0 0 1 5 0v6M15 16h5"/></svg>Tekst</button><button data-tab="achtergrond"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l6-6 12 12"/></svg>Achtergrond</button></div>
       <section class="blk b-media">
-      <div class="section-head"><h2 class="display">Media</h2><span class="hand">sleep naar de tijdlijn</span></div>
+      <div class="section-head"><h2 class="display">Media</h2><span class="hand media-hint">sleep naar de tijdlijn</span></div>
       <div class="panel">
         <label class="mdrop" id="mdrop"><input type="file" id="mediaIn" accept="image/*,video/*" multiple hidden><b>＋ Importeren</b><span>of sleep foto's en video's hierheen</span></label>
         <div class="mgrid" id="mgrid"></div>
@@ -455,6 +468,7 @@ select{min-width:0}
           <div class="row"><label>Positie</label><button class="btn" id="imgCenter">Centreren</button></div>
           <p class="hint">Sleep in het voorbeeld om de afbeelding te verplaatsen. Tip: gebruik een uitgeknipte PNG (zonder achtergrond).</p>
         </div>
+        <p class="hint mt-hint">Je hebt nu een foto of video gekozen. Tik op <b>＋ Tekst</b> of op een stijl hieronder om een nieuwe tekst toe te voegen, of tik een tekst aan in de tijdlijn om hem te bewerken.</p>
         <textarea id="text" placeholder="Typ je tekst… Leeg = voorbeeldtekst."></textarea>
         <div class="wrapctl">
           <div class="seg" id="wrap"><button data-v="one">Eén regel</button><button data-v="manual">Eigen regels</button><button data-v="auto">Automatisch</button></div>
@@ -544,6 +558,7 @@ select{min-width:0}
   <button data-mt="achtergrond"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l6-6 12 12"/></svg>Achtergrond</button>
   <button data-mt="export"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Export</button>
 </nav>
+<div class="toast" id="toast"></div>
 <div class="modal" id="modal">
   <div class="mbox">
     <div id="mview"></div>
@@ -896,7 +911,7 @@ function updBar(){const ph=$('tlHead');if(ph)ph.style.left=(Math.min(1,t/st.dur)
 const thumbs=[];let lastThumb=0;
 function buildGrid(){const g=$('grid');P.forEach(pr=>{const b=document.createElement('button');b.dataset.id=pr.id;b.draggable=true;b.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/x-style',pr.id);e.dataTransfer.effectAllowed='copy'});b.className='th'+(pr.id===L().preset?' on':'');
   const c=document.createElement('canvas');c.width=200;c.height=200;const s=document.createElement('span');s.textContent=pr.name;const gr=document.createElement('i');gr.className='gear';gr.textContent='⚙︎';b.append(c,s,gr);g.append(b);
-  b.onclick=()=>{if(L().type!=='text'){status('Kies eerst een tekstlaag om een stijl te geven.');return}if(L().preset===pr.id){openSheet();return}L().preset=pr.id;L().color=null;L().accent=null;document.querySelectorAll('.th').forEach(x=>x.classList.remove('on'));b.classList.add('on');syncColors();syncSheet();restart()};
+  b.onclick=()=>{if(L().type!=='text'){addStyleLayer(pr.id,{delay:Math.round(Math.min(t,Math.max(0,st.dur-1))*10)/10});status('Nieuwe tekst toegevoegd');return}if(L().preset===pr.id){openSheet();return}L().preset=pr.id;L().color=null;L().accent=null;document.querySelectorAll('.th').forEach(x=>x.classList.remove('on'));b.classList.add('on');syncColors();syncSheet();restart()};
   thumbs.push({pr,c,ctx:c.getContext('2d'),vis:true,b})});
   if('IntersectionObserver'in window){const io=new IntersectionObserver(es=>es.forEach(e=>{const th=thumbs.find(x=>x.b===e.target);if(th)th.vis=e.isIntersecting}));thumbs.forEach(th=>io.observe(th.b))}
 }
@@ -931,7 +946,7 @@ function rowDrag(ev,i,row,nm){ev.preventDefault();const y0=ev.clientY;let moved=
   nm.addEventListener('pointermove',mv);nm.addEventListener('pointerup',up);nm.addEventListener('pointercancel',up)}
 function dropInfo(e){const tr=document.querySelector('.tl-track')||$('tlRuler'),r=tr.getBoundingClientRect();const time=Math.max(0,Math.min(st.dur-.3,Math.round((e.clientX-r.left)/r.width*st.dur*10)/10));
   let at=layers.length;const rows=$('tlRows').getBoundingClientRect();if(layers.length&&e.clientY>=rows.top&&e.clientY<=rows.bottom)at=layers.length-rowAt(e.clientY);return{time,at}}
-function addStyleLayer(id,o){const e=o.delay+3;insertLayer(Object.assign({},LDEF,{preset:id,delay:o.delay,end:e>=st.dur-.05?null:e,cx:o.cx??.5,cy:o.cy??.5}),o.at);restart()}
+function addStyleLayer(id,o){const e=o.delay+3;insertLayer(Object.assign({},LDEF,{preset:id,delay:o.delay,end:e>=st.dur-.05?null:e,cx:o.cx??.5,cy:o.cy??.5}),o.at);{const l=L(),s0=l.delay||0,e2=lEnd(l);seek(Math.min(e2-.05,s0+Math.min(1.5,(e2-s0)*.6)))}}
 function hookDrop(el,info){el.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';el.classList.add('drop')});
   el.addEventListener('dragleave',e=>{if(!el.contains(e.relatedTarget))el.classList.remove('drop')});
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drop');const o=info(e);
@@ -981,20 +996,31 @@ function selectLayer(i){cur=i;if(L().type==='text'){$('text').value=L().text;doc
 function moveLayer(dir){const j=cur+dir;if(j<0||j>=layers.length)return;[layers[cur],layers[j]]=[layers[j],layers[cur]];cur=j;renderLayers()}
 function dupLayer(){const c=Object.assign({},L());layers.splice(cur+1,0,c);selectLayer(cur+1)}
 function insertLayer(l,at){const idx=at==null?layers.length:Math.max(0,Math.min(layers.length,at));layers.splice(idx,0,l);selectLayer(idx)}
+/* ---------- video's op iPhone: element in de pagina houden ---------- */
+const VHOST=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;overflow:hidden;z-index:-1';document.body.append(d);return d})();
+function hostVideo(v){v.style.cssText='width:2px;height:2px';VHOST.append(v);return v}
+function isVideoFile(f){return (f.type&&f.type.startsWith('video'))||/\.(mov|mp4|m4v|webm|hevc)$/i.test(f.name)}
+const VIDEO_PLACEHOLDER=(()=>{const c=document.createElement('canvas');c.width=c.height=200;const x=c.getContext('2d');x.fillStyle='#2C3352';x.fillRect(0,0,200,200);x.fillStyle='#fff';x.beginPath();x.moveTo(80,65);x.lineTo(140,100);x.lineTo(80,135);x.closePath();x.fill();return c.toDataURL()})();
 /* ---------- media-bibliotheek ---------- */
 const media=[];let mSeq=0;
 const fmtDur=d=>{d=Math.round(d||0);return Math.floor(d/60)+':'+String(d%60).padStart(2,'0')};
 function makeThumb(el,w0,h0){const c=document.createElement('canvas'),S=200,sc=Math.max(S/w0,S/h0);c.width=S;c.height=S;const x=c.getContext('2d');x.fillStyle='#15173A';x.fillRect(0,0,S,S);x.drawImage(el,(S-w0*sc)/2,(S-h0*sc)/2,w0*sc,h0*sc);return c.toDataURL('image/jpeg',.8)}
 function importFile(f){return new Promise(res=>{const url=URL.createObjectURL(f),name=f.name.replace(/\.[^.]+$/,'').slice(0,18),id='m'+(++mSeq);
-  if(f.type.startsWith('video')){const v=document.createElement('video');v.src=url;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';
-    v.onloadedmetadata=()=>{v.currentTime=Math.min(.2,(v.duration||1)/2)};
-    v.onseeked=()=>{v.onseeked=null;const m={id,type:'video',name,url,dur:v.duration||0,thumb:makeThumb(v,v.videoWidth,v.videoHeight)};media.push(m);renderMedia();res(m)};
-    v.onerror=()=>{status('Deze video kan niet geopend worden: '+f.name);res(null)}}
+  if(isVideoFile(f)){const v=hostVideo(document.createElement('video'));v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.preload='auto';
+    let done=false;status('Video laden… '+f.name);
+    const finish=ok=>{if(done)return;done=true;clearTimeout(tm);let th=null;try{if(ok&&v.videoWidth)th=makeThumb(v,v.videoWidth,v.videoHeight)}catch(e){}
+      const m={id,type:'video',name,url,dur:isFinite(v.duration)?v.duration:0,thumb:th||VIDEO_PLACEHOLDER};media.push(m);renderMedia();status('');try{v.pause()}catch(e){}res(m)};
+    v.addEventListener('loadedmetadata',()=>{try{v.currentTime=Math.min(.2,(v.duration||1)/2)}catch(e){}});
+    v.addEventListener('seeked',()=>setTimeout(()=>finish(true),60),{once:true});
+    v.addEventListener('loadeddata',()=>{setTimeout(()=>{if(!done&&v.readyState>=2)finish(true)},700)});
+    v.onerror=()=>{if(done)return;done=true;clearTimeout(tm);status('Deze video kan niet geopend worden: '+f.name);res(null)};
+    const tm=setTimeout(()=>{if(done)return;const p=v.play();if(p&&p.then)p.then(()=>setTimeout(()=>finish(true),250)).catch(()=>finish(false));setTimeout(()=>finish(v.readyState>=2),2500)},2000);
+    v.src=url;v.load()}
   else{const im=new Image();im.onload=()=>{const m={id,type:'image',name,url,el:im,thumb:makeThumb(im,im.naturalWidth,im.naturalHeight)};media.push(m);renderMedia();res(m)};
     im.onerror=()=>{status('Deze afbeelding kan niet geopend worden: '+f.name+' (HEIC werkt enkel in Safari)');res(null)};im.src=url}})}
 function addFromMedia(m,o={}){if(!m)return;const base={delay:o.delay||0,name:m.name,mediaId:m.id,cx:o.cx??.5,cy:o.cy??.5,sz:1,opacity:1,preset:'',text:''};
   if(m.type==='image'){insertLayer(Object.assign(base,{type:'image',img:m.el,url:m.url,end:o.end??null}),o.at)}
-  else{const v=document.createElement('video');v.src=m.url;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';
+  else{const v=hostVideo(document.createElement('video'));v.src=m.url;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';
     const s0=base.delay,vd=m.dur||3;if(s0+vd>st.dur){const nd=Math.min(60,s0+vd);['dur','dur2'].forEach(id=>$(id).max=Math.max(+$(id).max,Math.ceil(nd*10)));setDur(nd)}
     insertLayer(Object.assign(base,{type:'video',vid:v,url:m.url,end:(s0+vd)>=st.dur-.05?null:Math.round((s0+vd)*10)/10}),o.at)}
   renderMedia()}
@@ -1066,7 +1092,7 @@ $('audio').onchange=e=>{st.audio=e.target.checked;const bv=st.media&&st.media.el
 $('file').onchange=e=>{const f=e.target.files[0];if(!f)return;
   if(st.media&&st.media.url)URL.revokeObjectURL(st.media.url);
   const url=URL.createObjectURL(f);
-  if(f.type.startsWith('video')){const v=document.createElement('video');v.src=url;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';
+  if(isVideoFile(f)){const v=hostVideo(document.createElement('video'));v.src=url;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.load();
     v.onloadedmetadata=()=>{const d=Math.min(60,v.duration||4);st.dur=Math.max(1.5,d);['dur','dur2'].forEach(id=>$(id).max=Math.max(300,Math.ceil(d*10)));setDur(st.dur);t=0;v.currentTime=0;if(playing)v.play().catch(()=>{});bgUI()};
     st.media={type:'video',el:v,url};setTimeout(()=>{if(AC)attachBg()},0)}
   else{const im=new Image();im.onload=()=>bgUI();im.src=url;st.media={type:'image',el:im,url}}
@@ -1113,7 +1139,7 @@ $('pv').addEventListener('pointermove',e=>{const[px,py]=canvasPt(e);
 /* ---------- export ---------- */
 let dl=null;(async()=>{try{if(window.claude&&window.claude.use)dl=await window.claude.use('downloads')}catch(e){dl=null}})();
 let pending=null;
-function status(s){$('status').textContent=s}
+function status(s){$('status').textContent=s;const to=$('toast');if(!to||!s)return;to.textContent=s;to.classList.add('on');clearTimeout(status._t);status._t=setTimeout(()=>to.classList.remove('on'),2600)}
 function showModal(blob,name,kind){pending={blob,name};const mv=$('mview');mv.innerHTML='';const url=URL.createObjectURL(blob);
   const el=kind==='video'?Object.assign(document.createElement('video'),{src:url,controls:true,loop:true,playsInline:true,autoplay:true,muted:true}):Object.assign(document.createElement('img'),{src:url});
   mv.append(el);$('mStatus').textContent='';$('modal').classList.add('on')}
@@ -1175,7 +1201,7 @@ function attachAudio(l){if(l.type!=='video')return;if(!AC){l.vid.muted=true;retu
 function applyMute(l){const g=l.vid&&l.vid._g;if(g)g.gain.value=l.muted?0:1;else if(l.vid)l.vid.muted=true}
 function attachBg(){const v=st.media&&st.media.type==='video'?st.media.el:null;if(!AC||!v||v._g)return;try{const src=AC.createMediaElementSource(v),g=AC.createGain();g.gain.value=st.audio?1:0;src.connect(g);g.connect(AMaster);v._g=g;v.muted=false}catch(e){}}
 ['pointerdown','keydown'].forEach(n=>document.addEventListener(n,()=>ensureAudio(),{capture:true}));
-function newVidEl(url){const v=document.createElement('video');v.src=url;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.muted=true;return v}
+function newVidEl(url){const v=hostVideo(document.createElement('video'));v.src=url;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.muted=true;return v}
 const MIC=m=>m?'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 12 4.9M19 11v0M12 18v3"/><path d="M3 3l18 18"/></svg>':'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
 
 /* ---- ongedaan maken ---- */
@@ -1286,11 +1312,18 @@ document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>setTab(b.dat
 const _openSheet=openSheet;openSheet=function(){if(PHONE()){if(L().type==='text'){syncSheet();document.body.dataset.mt='bewerk';setTab.call(null);document.body.dataset.mt='bewerk';document.querySelectorAll('#mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mt==='bewerk'))}return}_openSheet()}
 /* op de telefoon: tik op een mediategel = toevoegen op de rode lijn */
 $('mgrid').addEventListener('click',e=>{if(!PHONE())return;const tile=e.target.closest('.mi');if(!tile||e.target.closest('button'))return;const i=[...$('mgrid').children].indexOf(tile);const m=media[i];if(m){addFromMedia(m,{delay:Math.round(Math.min(t,st.dur-.5)*10)/10});setTab()}});
+/* ---- mobiel: gekozen laag altijd in beeld + tekst snel bewerken ---- */
+{const _sel=selectLayer;selectLayer=function(i){_sel(i);const l=L();if(!l||exporting||!document.body.dataset.ready)return;
+  /* bewerken = pauzeren, en de gekozen laag in beeld brengen */
+  if(!visibleAt(l)){const s0=l.delay||0,e=lEnd(l);seek(Math.min(e-.05,s0+Math.min(1.5,(e-s0)*.6)))}else if(playing)seek(t);
+  if(PHONE()&&document.body.dataset.mt==='tekst'&&l.type==='text'){const c=document.querySelector('.col');if(c)c.scrollTop=0}}}
+{let lastTap=0;$('pv').addEventListener('pointerup',()=>{const now=Date.now();if(now-lastTap<380&&L().type==='text'){if(PHONE()){document.body.dataset.mt='tekst';document.querySelectorAll('#mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mt==='tekst'))}const ta=$('text');ta.focus();ta.select()}lastTap=now})}
+if(PHONE()){document.querySelectorAll('.media-hint').forEach(e=>e.textContent='tik om toe te voegen')}
 /* ---------- start ---------- */
 const FONTS=['400 40px Anton','400 40px "Archivo Black"','600 40px "Bodoni Moda"','italic 600 40px "Bodoni Moda"','400 40px "DM Serif Text"','400 40px "Libre Caslon Text"','400 40px "Bebas Neue"','700 40px Caveat','400 40px "DM Serif Display"','400 40px "Great Vibes"','800 40px Montserrat','900 40px Montserrat','600 40px Oswald','400 40px Pacifico','400 40px "Playfair Display"','italic 400 40px "Playfair Display"','900 40px "Playfair Display"','600 40px Poppins','700 40px Poppins','800 40px Poppins'];
 fillSample(layers[0]);setFormat();buildGrid();$('text').value=layers[0].text;renderLayers();$('nStyles').textContent=P.length;syncSheet();bgUI();
 const ready=document.fonts?Promise.race([Promise.all(FONTS.map(f=>document.fonts.load(f,'AaBb'))),new Promise(r=>setTimeout(r,4000))]):Promise.resolve();
-ready.catch(()=>{}).finally(()=>{spriteCache.clear();t=0;last=performance.now();requestAnimationFrame(loop)});
+ready.catch(()=>{}).finally(()=>{document.body.dataset.ready='1';spriteCache.clear();t=0;last=performance.now();requestAnimationFrame(loop)});
 </script>
 </body>
 </html>
